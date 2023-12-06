@@ -14,6 +14,7 @@
 \usepackage{xcolor}         % colors
 \usepackage{pgfplots}
 \usepackage{subcaption}
+\usepackage{csvsimple}
 
 \title{VitalLens 1.0 Technical Report}
 
@@ -111,10 +112,97 @@ This results in a total of 9,767 chunks or 27.8 hours of data.
 Each participant is randomly assigned to be part of either the \textit{training}, \textit{validation}, or \textit{test} set to ensure that all participants seen during validation and test are previously unseen by the model.
 
 \paragraph{Participant diversity.}
-The skin type diversity of PROSIT is lacking, with too many type 2 and too few type 5 and 6 participants.
-This is why we additionally use the Vital Videos Ghana training set when training our model.
+The demographics of the participants in PROSIT are given in Figure \ref{fig:prosit-demographics}.
+Most participants in PROSIT are under 40 years old, and there are more male than female participants.
+As we show in Section \ref{results}, this is not an issue in practice.
+However, the skin type diversity of PROSIT is also lacking, with too many type 2 and too few type 5 and 6 participants.
+This is in fact an issue.
+To avoid a skin type bias in our model, we supplement our training data with the \textit{Vital Videos Ghana} training set which has mostly type 5 and 6 participants.
 
-TODO: Histogram of ages x n participants
+% Modified example from www.texample.net for pie charts
+% This example needs the packages tikz, xcolor, calc
+\definecolorseries{myseries}{rgb}{step}[rgb]{.95,.85,.55}{.17,.47,.37}
+\resetcolorseries{myseries}%
+
+% a pie slice
+\newcommand{\slice}[4]{
+	\pgfmathsetmacro{\midangle}{0.5*#1+0.5*#2}
+	\begin{scope}
+		\clip (0,0) -- (#1:1) arc (#1:#2:1) -- cycle;
+		\colorlet{SliceColor}{myseries!!+}%
+		\fill[inner color=SliceColor!30,outer color=SliceColor!60] (0,0) circle (1cm);
+	\end{scope}
+	\draw[thick] (0,0) -- (#1:1) arc (#1:#2:1) -- cycle;
+	\node[label={[font=\small]\midangle:#4}] at (\midangle:1) {};
+	\pgfmathsetmacro{\temp}{min((#2-#1-10)/110*(-0.3),0)}
+	\pgfmathsetmacro{\innerpos}{max(\temp,-0.5) + 0.8}
+	\node[font=\small] at (\midangle:\innerpos) {#3};
+}
+
+\begin{figure}[h!]
+	\centering
+    \begin{subfigure}{0.32\textwidth}
+    	\centering
+    	\begin{tikzpicture}
+        	\begin{axis}[
+            		table/col sep=comma,
+            		ybar,
+            		xmin=10,
+            		xmax=95,
+            		ylabel=Frequency,
+            		width=\textwidth,
+            		height=4.6cm,
+            		grid=major,
+            		bar width=8pt,
+            		y label style={yshift=-12pt},
+            		label style={inner sep=0pt}
+            	]
+            	\addplot[fill=blue!60,opacity=0.8] table[x index=0, y index=1] {data/age_histogram.csv};
+        	\end{axis}
+    	\end{tikzpicture}
+    	\caption{Age}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}{0.32\textwidth}
+    	\centering
+    	% drawing of the pie chart
+    	\begin{tikzpicture}[scale=1.5]%
+    	\def\mya{0}\def\myb{0}
+    	\csvreader[before reading=\def\mysum{0}]{data/gender.csv}{Value=\Value}{%
+			\pgfmathsetmacro{\mysum}{\mysum+\Value}%
+		}
+		\csvreader[head to column names]{data/gender.csv}{}{%
+			\let\mya\myb
+			\pgfmathsetmacro{\myb}{\myb+\Value}
+			\slice{\mya/\mysum*360}{\myb/\mysum*360}{\Value}{\Label}		}
+		\end{tikzpicture}%
+		\caption{Gender}
+    \end{subfigure}
+    \begin{subfigure}{0.32\textwidth}
+    	\centering
+    	% drawing of the pie chart
+    	\begin{tikzpicture}[scale=1.5]%
+    	% sum of amounts
+		\csvreader[before reading=\def\mysum{0}]{data/gender.csv}{Value=\Value}{%
+			\pgfmathsetmacro{\mysum}{\mysum+\Value}%
+		}
+    	\def\mya{0}\def\myb{0}
+		\csvreader[head to column names]{data/skin_type.csv}{}{%
+			\let\mya\myb
+			\pgfmathsetmacro{\myb}{\myb+\Value}
+			\slice{\mya/\mysum*360}{\myb/\mysum*360}{\Value}{\Label}		}
+		\end{tikzpicture}%
+		\caption{Skin type}
+    \end{subfigure}
+    \hfill
+    \caption{Participant demographics in PROSIT}
+    \label{fig:prosit-demographics}
+\end{figure}
+
+\paragraph{Vitals diversity.}
+Distributions of the vitals in PROSIT are given in Figure \ref{fig:prosit-vitals-histogram}.
+The participants are mostly healthy, so these vitals fall in the typical ranges.
+There are several participants who have an irregular heartbeat.
 
 \begin{figure}[h!]
     \centering
@@ -133,7 +221,7 @@ TODO: Histogram of ages x n participants
             		grid=major,
             		bar width=12pt
             	]
-            	\addplot[fill=red!60,opacity=0.8] table[x index=0, y index=1] {hr_histogram.csv};
+            	\addplot[fill=red!60,opacity=0.8] table[x index=0, y index=1] {data/hr_histogram.csv};
         	\end{axis}
     	\end{tikzpicture}
     \end{subfigure}
@@ -153,7 +241,7 @@ TODO: Histogram of ages x n participants
             		grid=major,
             		bar width=12pt
             	]
-            	\addplot[fill=blue!60,opacity=0.8] table[x index=0, y index=1] {rr_histogram.csv};
+            	\addplot[fill=blue!60,opacity=0.8] table[x index=0, y index=1] {data/rr_histogram.csv};
         	\end{axis}
     	\end{tikzpicture}
     \end{subfigure}
@@ -172,9 +260,9 @@ TODO: Histogram of ages x n participants
             		grid=major,
             		legend style={at={(.98,.97)}, anchor=north east},
             	]
-            	\addplot[ybar,bar width=10pt,fill=blue!60,opacity=0.8] table[x index=0, y index=1] {bp_sys_histogram.csv};
+            	\addplot[ybar,bar width=10pt,fill=blue!60,opacity=0.8] table[x index=0, y index=1] {data/bp_sys_histogram.csv};
             	\addlegendentry{SBP}
-            	\addplot[ybar,bar width=7pt,fill=red!60,opacity=0.7] table[x index=0, y index=1] {bp_dia_histogram.csv};
+            	\addplot[ybar,bar width=7pt,fill=red!60,opacity=0.7] table[x index=0, y index=1] {data/bp_dia_histogram.csv};
             	\addlegendentry{DBP}
         	\end{axis}
     	\end{tikzpicture}
@@ -195,25 +283,13 @@ TODO: Histogram of ages x n participants
             		grid=major,
             		bar width=12pt
             	]
-            	\addplot[fill=blue!60,opacity=0.8] table[x index=0, y index=1] {spo2_histogram.csv};
+            	\addplot[fill=blue!60,opacity=0.8] table[x index=0, y index=1] {data/spo2_histogram.csv};
         	\end{axis}
     	\end{tikzpicture}
     \end{subfigure}
     \caption{Distributions of chunk summary vitals in PROSIT}
-    \label{fig:histogram}
+    \label{fig:prosit-vitals-histogram}
 \end{figure}
-
-TODO: Histogram of skin types x n participants
-TODO: Histogram of genders x n participants1 
-
-\paragraph{Vitals diversity.}
-There are also several participants who have an irregular heartbeat.
-
-TODO: Histogram of HR x n chunks
-TODO: Histogram of RR x n chunks
-TODO: Histogram of BP x n chunks
-TODO: Histogram of SpO2 x n chunks
-
 \subsection{Vital Videos}
 
 \subsubsection{Vital Videos Medium}
@@ -243,6 +319,7 @@ Distributions of metadata
 ?
 
 \section{Results and Discussion}
+\label{results}
 
 \subsection{Vitals estimation}
 
