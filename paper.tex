@@ -12,6 +12,8 @@
 \usepackage{nicefrac}       % compact symbols for 1/2, etc.
 \usepackage{microtype}      % microtypography
 \usepackage{xcolor}         % colors
+\usepackage{pgfplots}
+\usepackage{subcaption}
 
 \title{VitalLens 1.0 Technical Report}
 
@@ -113,8 +115,96 @@ The skin type diversity of PROSIT is lacking, with too many type 2 and too few t
 This is why we additionally use the Vital Videos Ghana training set when training our model.
 
 TODO: Histogram of ages x n participants
+
+\begin{figure}[h!]
+    \centering
+    \begin{subfigure}{0.48\textwidth}
+    	\centering
+    	\begin{tikzpicture}
+        	\begin{axis}[
+            		table/col sep=comma,
+            		ybar,
+            		ylabel=Frequency,
+            		xlabel={Heart rate [bpm]},
+            		xmin=35,
+            		xmax=130,
+            		width=\textwidth,
+            		height=5cm,
+            		grid=major,
+            		bar width=12pt
+            	]
+            	\addplot[fill=red!60,opacity=0.8] table[x index=0, y index=1] {hr_histogram.csv};
+        	\end{axis}
+    	\end{tikzpicture}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}{0.48\textwidth}
+    	\centering
+    	\begin{tikzpicture}
+        	\begin{axis}[
+            		table/col sep=comma,
+            		ybar,
+            		ylabel=Frequency,
+            		xlabel={Respiratory rate [rpm]},
+            		xmin=-2,
+            		xmax=40,
+            		width=\textwidth,
+            		height=5cm,
+            		grid=major,
+            		bar width=12pt
+            	]
+            	\addplot[fill=blue!60,opacity=0.8] table[x index=0, y index=1] {rr_histogram.csv};
+        	\end{axis}
+    	\end{tikzpicture}
+    \end{subfigure}
+	\begin{subfigure}{0.48\textwidth}
+    	\centering
+    	\begin{tikzpicture}
+        	\begin{axis}[
+            		table/col sep=comma,
+            		ybar,
+            		ylabel=Frequency,
+            		xlabel={Blood pressure [mmHg]},
+            		xmin=50,
+            		xmax=170,
+            		width=\textwidth,
+            		height=5cm,
+            		grid=major,
+            		legend style={at={(.98,.97)}, anchor=north east},
+            	]
+            	\addplot[ybar,bar width=10pt,fill=blue!60,opacity=0.8] table[x index=0, y index=1] {bp_sys_histogram.csv};
+            	\addlegendentry{SBP}
+            	\addplot[ybar,bar width=7pt,fill=red!60,opacity=0.7] table[x index=0, y index=1] {bp_dia_histogram.csv};
+            	\addlegendentry{DBP}
+        	\end{axis}
+    	\end{tikzpicture}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}{0.48\textwidth}
+    	\centering
+    	\begin{tikzpicture}
+        	\begin{axis}[
+            		table/col sep=comma,
+            		ybar,
+            		ylabel=Frequency,
+            		xlabel={SpO2 [\%]},
+            		xmin=87,
+            		xmax=101,
+            		width=\textwidth,
+            		height=5cm,
+            		grid=major,
+            		bar width=12pt
+            	]
+            	\addplot[fill=blue!60,opacity=0.8] table[x index=0, y index=1] {spo2_histogram.csv};
+        	\end{axis}
+    	\end{tikzpicture}
+    \end{subfigure}
+    \caption{Distributions of chunk summary vitals in PROSIT}
+    \label{fig:histogram}
+\end{figure}
+
 TODO: Histogram of skin types x n participants
-TODO: Histogram of genders x n participants
+TODO: Histogram of genders x n participants1 
 
 \paragraph{Vitals diversity.}
 There are also several participants who have an irregular heartbeat.
