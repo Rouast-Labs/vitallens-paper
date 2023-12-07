@@ -41,6 +41,7 @@ The estimation engine of VitalLens is a computer vision model trained on a diver
 
 
 \section{Introduction}
+\label{sec:introduction}
 
 Video of the human face and upper body contains signals with information about the subject's physiological state \citep{verkruysse2008remote}.
 Given appropriate circumstances, these signals can be strong enough to estimate vital signs such as heart rate and respiratory rate.
@@ -57,17 +58,16 @@ Acknowledge other models we don't compare because lack focus on real-time.
 
 Section summarizing the remainder of the report.
 
-\section{Scope and Limitations of this Technical Report}
-\label{gen_inst}
+\section{Model Architecture}
+\label{sec:scope}
 
-This report focuses on the capabilities and limitations of VitalLens.
-The estimation engine of VitalLens is a computer vision model trained on a diverse dataset of video and gold-standard ground truth physiological data.
+The estimation engine built into VitalLens is a computer vision model trained on a diverse dataset of video and gold-standard ground truth physiological data.
+The model architecture is broadly based on the \textit{EfficientNetV2} \cite{tan2021efficient} model family, enhanced with several improvements in architecture and model optimization to enable efficient training and inference in the rPPG domain.
 
-This report does not contain any further detail about the architecture of the model or training methodology -
-we reserve this for future publication.
+This report does not contain any further detail about the architecture of the model or training methodology - we reserve this for future publication.
 
 \section{Datasets}
-\label{headings}
+\label{sec:datasets}
 
 VitalLens is trained on the \textit{PROSIT} and \textit{Vital Videos Ghana} datasets.
 The vast majority of training data comes from PROSIT.
@@ -80,7 +80,9 @@ PROSIT (\underline{P}hysiological \underline{R}ecordings \underline{O}f \underli
 \paragraph{Participant recruitment and session protocol.} 
 As part of our goal of creating a diverse rPPG dataset for practical applications, we recruit participants and collect data at various locations such as residential homes, offices, libraries, and clubs.
 Each potential participant was required to go through an informed consent process in accordance with Australian privacy laws prior to participation.
-During the session, participants are asked to complete tasks on an iPad while sensor data is being recorded.
+During the session, participants are asked to complete tasks on a hand-held iPad while sensor data is being recorded.
+Participants are not explicitly asked to remain stationary, which results in varying amounts of participant movement.
+For some sessions, the camera is on a tripod and thereby stationary, while for other sessions the camera is fixed to the iPad and thereby not necessarily stationary.
 
 \paragraph{Sensors and collected data.}
 The time-synchronized sensor array used for PROSIT consists of a video camera, electrocardiogram (ECG), pulse oximetry, blood pressure monitor, and an ambient light sensor.
@@ -123,6 +125,7 @@ Each participant is randomly assigned to be part of either the \textit{training}
 Vital Videos is a large, diverse dataset for rPPG collected in Belgium \cite{toye2023vital}.
 It is the largest dataset we are aware of that is available for research without academic affiliation.
 We use a slightly extended version of the medium instantiation (``VV-Medium''), which consists of 296 participants.
+Both camera and participants are stationary in this dataset.
 
 \paragraph{Pre-processing.}
 
@@ -155,6 +158,7 @@ It was collected in Ghana, with the majority of participants having skin type 5 
 	\pgfmathsetmacro{\totaltimevvghana}{\totaltimevvghana+\time}%
 }
 We use a small instantiation (``VV-Ghana-Small''), which consists of \sisetup{round-mode=places,round-precision=0}\num{\totalparticipantsvvghana} participants.
+Both camera and participants are stationary in this dataset.
 
 \paragraph{Pre-processing.}
 
@@ -202,10 +206,10 @@ As of this writing, this makes a total of \sisetup{round-mode=places,round-preci
 
 \paragraph{Dataset demographics.}
 The demographics of our training dataset are given in Figure \ref{fig:training-demographics}.
-The participants are predominantly on the younger side, but as we show in Section \ref{results}, this is not an issue in practice.
+The participants are predominantly on the younger side, but as we show in Section \ref{sec:results}, this is not an issue in practice.
 Genders are equally represented.
 Although the skin type diversity of PROSIT by itself is lacking, this combined training dataset has a diverse representation of skin types.
-As we show in Section \ref{results}, this helps us to reduce the skin type bias of VitalLens.
+As we show in Section \ref{sec:results}, this helps us to reduce the skin type bias of VitalLens.
 
 % Modified example from www.texample.net for pie charts
 % This example needs the packages tikz, xcolor, calc
@@ -289,7 +293,7 @@ As we show in Section \ref{results}, this helps us to reduce the skin type bias 
     \label{fig:training-demographics}
 \end{figure}
 
-\paragraph{Vitals diversity.}
+\paragraph{Dataset vitals diversity.}
 Distributions of the vitals in our training dataset are given in Figure \ref{fig:training-vitals-histogram}.
 The participants are mostly healthy, so these vitals fall in the typical ranges.
 There are several participants who have an irregular heartbeat.
@@ -340,12 +344,36 @@ There are several participants who have an irregular heartbeat.
 \end{figure}
 
 \section{Methodology}
-\label{others}
+\label{sec:methodology}
 
-?
+To develop and evaluate the VitalLens estimation engine model, we follow a systematic approach involving model training, validation, and testing:
+
+\paragraph{Model Training.}
+The training process optimizes the model parameters to learn the mapping between facial video signals and ground truth physiological data.
+For this purpose, we use a diverse training dataset of \sisetup{round-mode=places,round-precision=0}\num{\totalparticipantstraining} unique participants introduced in Section \ref{sec:datasets}.
+
+\paragraph{Model Validation.}
+While developing the model, we train many different versions of our model.
+During training, we continuously monitor the model's performance on the validation sets of PROSIT and VV-Ghana-Small as outlined in Section \ref{sec:datasets}.
+Since the training dataset is disjoint from both validation sets in terms of participants, this allows us to calculate validation metrics which measure how well each model has learned to generalize in estimating vital signs from video.
+We used the validation metrics to select the final model to be used in VitalLens.
+
+\paragraph{Model Testing.}
+The final evaluation of the VitalLens estimation engine is conducted by measuring the generalization abilities of the final model on several datasets, all of which are participant-disjoint from both the training and validation datasets:
+
+\begin{itemize}
+	\item The entire VV-Medium dataset, a large and diverse dataset of 289 participants introduced in Section \ref{sec:datasets}. It includes participants with varying demographics and environmental conditions.
+	\item The test set of the PROSIT dataset. This is important as PROSIT includes camera and participant movement, which is to be expected when VitalLens is used in the wild.
+	\item The test set of the VV-Ghana-Small dataset.
+\end{itemize}
+
+The evaluation metrics include key vital signs such as heart rate and respiratory rate. We compare the performance of VitalLens with existing methods, including G, CHROM, POS, DeepPhys, and MTTS-CAN, using metrics such as Signal-to-Noise Ratio (SNR) and Mean Absolute Error (MAE).
+
+This methodology ensures a thorough assessment of the VitalLens estimation engine, considering diverse data sources and real-world conditions.
+The results and discussions in the following sections provide insights into the effectiveness and limitations of the proposed approach.
 
 \section{Results and Discussion}
-\label{results}
+\label{sec:results}
 
 \subsection{Vitals estimation}
 
@@ -373,6 +401,7 @@ Bar chart comparing G, CHROM, POS, DeepPhys, MTTS-CAN, VitalLens SNR estimating 
 Bar chart comparing G, CHROM, POS, DeepPhys, MTTS-CAN, VitalLens SNR estimating HR - vs subject age on x axis.
 
 \section{Conclusion}
+\label{sec:conclusion}
 
 Authors may wish to optionally include extra information (complete proofs, additional experiments and plots) in the appendix. All such materials should be part of the supplemental material (submitted separately) and should NOT be included in the main submission.
 
