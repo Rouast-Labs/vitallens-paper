@@ -15,8 +15,10 @@
 \usepackage{pgfplots}
 \usepackage{subcaption}
 \usepackage{csvsimple}
+\usepackage{siunitx}
+\sisetup{group-separator = {,}, group-minimum-digits = 4}
 
-\title{VitalLens 1.0 Technical Report}
+\title{VitalLens: Take A Vital Selfie}
 
 \author{%
   Philipp V.~Rouast \\
@@ -32,7 +34,7 @@
 
 
 \begin{abstract}
-We report the development of VitalLens, an app that estimates vital signs such as heart rate and respiration rate from selfie video in real time.
+This report introduces VitalLens, an app that estimates vital signs such as heart rate and respiration rate from selfie video in real time.
 The estimation engine of VitalLens is a computer vision model trained on a diverse dataset of video and gold-standard ground truth physiological sensor data.
 % TODO: Summarize findings
 \end{abstract}
@@ -40,22 +42,26 @@ The estimation engine of VitalLens is a computer vision model trained on a diver
 
 \section{Introduction}
 
-Video of the human face and upper body contains signals with information about the subject's physiological state.
+Video of the human face and upper body contains signals with information about the subject's physiological state \citep{verkruysse2008remote}.
 Given appropriate circumstances, these signals can be strong enough to estimate vital signs such as heart rate and respiratory rate.
 This process is known as Remote Photoplethysmography (rPPG); many rPPG approaches have been proposed, including handcrafted algorithms and ones learned from empirical data.
 Depending on the intended application, we can measure advantages and drawbacks of rPPG approaches in the accuracy, inference speed, and robustness regarding various factors impacting estimation performance.
 
-Paragraph on G, CHROM, and POS.
+Paragraph on G \cite{verkruysse2008remote}, CHROM \cite{de2013robust}, and POS \cite{wang2017algorithmic}.
 
-Paragraph on DeepPhys and MTTS-CAN.
+Paragraph on DeepPhys \cite{chen2018deep} and MTTS-CAN \cite{liu2020multi}.
 
 Acknowledge other models we don't compare because lack focus on real-time.
+
+[INSERT FIGURE WITH SAMPLE PREDICTIONS FROM VALIDATION SET]
+
+Section summarizing the remainder of the report.
 
 \section{Scope and Limitations of this Technical Report}
 \label{gen_inst}
 
 This report focuses on the capabilities and limitations of VitalLens.
-The estimation engine of VitalLens is a recurrent convolutional model trained on a diverse dataset of video and gold-standard ground truth physiological data.
+The estimation engine of VitalLens is a computer vision model trained on a diverse dataset of video and gold-standard ground truth physiological data.
 
 This report does not contain any further detail about the architecture of the model or training methodology -
 we reserve this for future publication.
@@ -63,15 +69,13 @@ we reserve this for future publication.
 \section{Datasets}
 \label{headings}
 
-Two major datasets are involved with training and evaluation of VitalLens:
-The \textit{PROSIT} dataset and the \textit{Vital Videos} dataset.
-The vast majority of the data used to train VitalLens comes from PROSIT.
-We enrich the training data with a subset of data from the Vital Videos dataset, as detailed in this section.
-The main Vital Videos dataset serves as a test set for the evaluation of VitalLens.
+VitalLens is trained on the \textit{PROSIT} and \textit{Vital Videos Ghana} datasets.
+The vast majority of training data comes from PROSIT.
+For evaluation, we use the entire \textit{Vital Videos Medium} dataset as well as the test sets of the \textit{PROSIT} and \textit{Vital Videos Ghana} datasets.
 
 \subsection{PROSIT}
 
-PROSIT (\underline{P}hysiological \underline{R}ecordings \underline{O}f \underline{S}ubjects using \underline{I}maging \underline{T}echnology) is our in-house dataset for practical rPPG applications.
+PROSIT (\underline{P}hysiological \underline{R}ecordings \underline{O}f \underline{S}ubjects using \underline{I}maging \underline{T}echnology) is our in-house dataset collected in Australia for practical rPPG applications.
 
 \paragraph{Participant recruitment and session protocol.} 
 As part of our goal of creating a diverse rPPG dataset for practical applications, we recruit participants and collect data at various locations such as residential homes, offices, libraries, and clubs.
@@ -88,36 +92,120 @@ We pre-process and split each session into small chunks of 5-20 seconds with val
 As part of this step, we also calculate summary vitals for each chunk from the continuous signals, and extract further metadata such as the amount of participant movement and illumination variation.
 
 \paragraph{Dataset size and split.}
+\csvreader[before reading=\def\totalparticipantsprosit{0}\def\totalchunksprosit{0}\def\totaltimeprosit{0}\def\totalsessionsprosit{0}]{data/prosit_summary.csv}{participants=\participants,chunks=\chunks,time=\time,sessions=\sessions}{%
+	\pgfmathsetmacro{\totalparticipantsprosit}{\totalparticipantsprosit+\participants}%
+	\pgfmathsetmacro{\totalchunksprosit}{\totalchunksprosit+\chunks}%
+	\pgfmathsetmacro{\totaltimeprosit}{\totaltimeprosit+\time}%
+	\pgfmathsetmacro{\totalsessionsprosit}{\totalsessionsprosit+\sessions}%
+}
 Development of PROSIT is ongoing.
-As of the writing of this report, it comprises 157 unique participants across 173 recording sessions in 45 different locations.
-This results in a total of 9,767 chunks or 27.8 hours of data.
+As of the writing of this report, it comprises \sisetup{round-mode=places,round-precision=0}\num{\totalparticipantsprosit} unique participants across \sisetup{round-mode=places,round-precision=0}\num{\totalsessionsprosit} recording sessions in 45 different locations.
+This results in a total of \sisetup{round-mode=places,round-precision=0}\num{\totalchunksprosit} chunks or \sisetup{round-mode=places,round-precision=1}\num{\totaltimeprosit} hours of data.
 
 \begin{table}[h!]
-  \caption{PROSIT Dataset Size}
-  \label{prosit-table}
-  \centering
-  \begin{tabular}{llll}
-    \toprule
-    Split      & \# Participants & \# Chunks & Time   \\
-    \midrule
-    Training   & 114 			 & 6,765     & 19.4 h \\
-    Validation & 23 			 & 1,599     & 4.5 h  \\
-    Test       & 20     			 & 1,403     & 3.9 h  \\
-    \midrule
-    Total      & 157			 & 9,767  	 & 27.8 h \\
-    \bottomrule
-  \end{tabular}
+ 	\caption{PROSIT Dataset Size}
+ 	\label{tab:prosit-summary}
+ 	\centering
+  	\csvreader[
+		tabular=llll,
+    	table head=\toprule Split & \# Participants & \# Chunks & Time \\ \midrule,
+    	table foot=\midrule Total & \sisetup{round-mode=places,round-precision=0}\num{\totalparticipantsprosit} & \sisetup{round-mode=places,round-precision=0}\num{\totalchunksprosit} & \sisetup{round-mode=places,round-precision=1}\SI{\totaltimeprosit}{\hour} \\ \bottomrule,
+    	late after line=\\,
+    	before reading={\catcode`\%=12}, after reading={\catcode`\%=14}
+  	]{data/prosit_summary.csv}{}%
+  {\csvcoli & \num{\csvcolii} & \num{\csvcoliv} & \SI{\csvcolv}{\hour} }
 \end{table}
 
 Each participant is randomly assigned to be part of either the \textit{training}, \textit{validation}, or \textit{test} set to ensure that all participants seen during validation and test are previously unseen by the model.
 
-\paragraph{Participant diversity.}
-The demographics of the participants in PROSIT are given in Figure \ref{fig:prosit-demographics}.
-Most participants in PROSIT are under 40 years old, and there are more male than female participants.
-As we show in Section \ref{results}, this is not an issue in practice.
-However, the skin type diversity of PROSIT is also lacking, with too many type 2 and too few type 5 and 6 participants.
-This is in fact an issue.
-To avoid a skin type bias in our model, we supplement our training data with the \textit{Vital Videos Ghana} training set which has mostly type 5 and 6 participants.
+\subsection{Vital Videos Medium}
+
+Vital Videos is a large, diverse dataset for rPPG collected in Belgium \cite{toye2023vital}.
+It is the largest dataset we are aware of that is available for research without academic affiliation.
+We use a slightly extended version of the medium instantiation (``VV-Medium''), which consists of 296 participants.
+
+\paragraph{Pre-processing.}
+
+We pre-process VV-Medium using the same steps applied to PROSIT.
+As part of this step, we create small chunks, calculate summary vitals, and extract further metadata.
+
+\begin{table}[h!]
+ 	\caption{VV-Medium Dataset Size}
+ 	\label{tab:vv-medium-summary}
+ 	\centering
+  	\csvreader[
+		tabular=llll,
+    	table head=\toprule Split & \# Participants & \# Chunks & Time \\ \midrule,
+    	table foot=\bottomrule,
+    	late after line=\\,
+    	before reading={\catcode`\%=12}, after reading={\catcode`\%=14}
+  	]{data/vv_medium_summary.csv}{}%
+  {\csvcoli & \num{\csvcolii} & \num{\csvcoliii} & \SI{\csvcoliv}{\hour} }
+\end{table}
+
+The entirety of VV-Medium is used to test the capabilities of VitalLens.
+
+\subsection{Vital Videos Ghana}
+
+Vital Videos Ghana is a new dataset from the authors of Vital Videos aiming to address the insufficient share of participants with skin types 5 and 6 usually found in rPPG datasets.
+It was collected in Ghana, with the majority of participants having skin type 5 or 6.
+\csvreader[before reading=\def\totalparticipantsvvghana{0}\def\totalchunksvvghana{0}\def\totaltimevvghana{0}]{data/vv_ghana_small_summary.csv}{participants=\participants,chunks=\chunks,time=\time}{%
+	\pgfmathsetmacro{\totalparticipantsvvghana}{\totalparticipantsvvghana+\participants}%
+	\pgfmathsetmacro{\totalchunksvvghana}{\totalchunksvvghana+\chunks}%
+	\pgfmathsetmacro{\totaltimevvghana}{\totaltimevvghana+\time}%
+}
+We use a small instantiation (``VV-Ghana-Small''), which consists of \sisetup{round-mode=places,round-precision=0}\num{\totalparticipantsvvghana} participants.
+
+\paragraph{Pre-processing.}
+
+We pre-process VV-Ghana-Small using the same steps applied to PROSIT.
+As part of this step, we create small chunks, calculate summary vitals, and extract further metadata.
+
+\begin{table}[h!]
+ 	\caption{VV-Ghana-Small Dataset Size}
+ 	\label{tab:vv-ghana-small-summary}
+ 	\centering
+  	\csvreader[
+		tabular=llll,
+    	table head=\toprule Split & \# Participants & \# Chunks & Time \\ \midrule,
+    	table foot=\midrule Total & \sisetup{round-mode=places,round-precision=0}\num{\totalparticipantsvvghana} & \sisetup{round-mode=places,round-precision=0}\num{\totalchunksvvghana} & \sisetup{round-mode=places,round-precision=1}\SI{\totaltimevvghana}{\hour} \\ \bottomrule,
+    	late after line=\\,
+    	before reading={\catcode`\%=12}, after reading={\catcode`\%=14}
+  	]{data/vv_ghana_small_summary.csv}{}%
+  {\csvcoli & \num{\csvcolii} & \num{\csvcoliii} & \sisetup{round-mode=places,round-precision=1}\SI{\csvcoliv}{\hour} }
+\end{table}
+
+Each participant is randomly assigned to be part of either the \textit{training}, \textit{validation}, or \textit{test} set to ensure that all participants seen during validation and test are previously unseen by the model.
+
+\subsection{Final training dataset: PROSIT + VV-Ghana-Small}
+\csvreader[before reading=\def\totalparticipantstraining{0}\def\totalchunkstraining{0}\def\totaltimetraining{0}]{data/training_summary.csv}{participants=\participants,chunks=\chunks,time=\time}{%
+		\pgfmathsetmacro{\totalparticipantstraining}{\totalparticipantstraining+\participants}%
+		\pgfmathsetmacro{\totalchunkstraining}{\totalchunkstraining+\chunks}%
+		\pgfmathsetmacro{\totaltimetraining}{\totaltimetraining+\time}%
+	}
+We combine the training sets of PROSIT and VV-Ghana-Small for training.
+As of this writing, this makes a total of \sisetup{round-mode=places,round-precision=0}\num{\totalparticipantstraining} unique participants, \sisetup{round-mode=places,round-precision=0}\num{\totalchunkstraining} chunks or \sisetup{round-mode=places,round-precision=1}\num{\totaltimetraining} hours of data.
+
+\begin{table}[h!]
+ 	\caption{VitalLens Training Dataset Size}
+ 	\label{tab:training-summary}
+ 	\centering
+  	\csvreader[
+		tabular=llll,
+    	table head=\toprule Source & \# Participants & \# Chunks & Time \\ \midrule,
+    	table foot=\midrule Total & \sisetup{round-mode=places,round-precision=0}\num{\totalparticipantstraining} & \sisetup{round-mode=places,round-precision=0}\num{\totalchunkstraining} & \sisetup{round-mode=places,round-precision=1}\SI{\totaltimetraining}{\hour} \\ \bottomrule,
+    	late after line=\\,
+    	before reading={\catcode`\%=12}, after reading={\catcode`\%=14}
+  	]{data/training_summary.csv}{}%
+  {\csvcoli & \num{\csvcolii} & \num{\csvcoliii} & \sisetup{round-mode=places,round-precision=1}\SI{\csvcoliv}{\hour} }
+\end{table}
+
+\paragraph{Dataset demographics.}
+The demographics of our training dataset are given in Figure \ref{fig:training-demographics}.
+The participants are predominantly on the younger side, but as we show in Section \ref{results}, this is not an issue in practice.
+Genders are equally represented.
+Although the skin type diversity of PROSIT by itself is lacking, this combined training dataset has a diverse representation of skin types.
+As we show in Section \ref{results}, this helps us to reduce the skin type bias of VitalLens.
 
 % Modified example from www.texample.net for pie charts
 % This example needs the packages tikz, xcolor, calc
@@ -174,7 +262,8 @@ To avoid a skin type bias in our model, we supplement our training data with the
 		\csvreader[head to column names]{data/gender.csv}{}{%
 			\let\mya\myb
 			\pgfmathsetmacro{\myb}{\myb+\Value}
-			\slice{\mya/\mysum*360}{\myb/\mysum*360}{\Value}{\Label}		}
+			\slice{\mya/\mysum*360}{\myb/\mysum*360}{\Value}{\Label}
+		}
 		\end{tikzpicture}%
 		\caption{Gender}
     \end{subfigure}
@@ -183,24 +272,25 @@ To avoid a skin type bias in our model, we supplement our training data with the
     	% drawing of the pie chart
     	\begin{tikzpicture}[scale=1.5]%
     	% sum of amounts
-		\csvreader[before reading=\def\mysum{0}]{data/gender.csv}{Value=\Value}{%
+		\csvreader[before reading=\def\mysum{0}]{data/skin_type.csv}{Value=\Value}{%
 			\pgfmathsetmacro{\mysum}{\mysum+\Value}%
 		}
     	\def\mya{0}\def\myb{0}
 		\csvreader[head to column names]{data/skin_type.csv}{}{%
 			\let\mya\myb
 			\pgfmathsetmacro{\myb}{\myb+\Value}
-			\slice{\mya/\mysum*360}{\myb/\mysum*360}{\Value}{\Label}		}
+			\slice{\mya/\mysum*360}{\myb/\mysum*360}{\Value}{\Label}
+		}
 		\end{tikzpicture}%
 		\caption{Skin type}
     \end{subfigure}
     \hfill
-    \caption{Participant demographics in PROSIT}
-    \label{fig:prosit-demographics}
+    \caption{Participant demographics in training dataset}
+    \label{fig:training-demographics}
 \end{figure}
 
 \paragraph{Vitals diversity.}
-Distributions of the vitals in PROSIT are given in Figure \ref{fig:prosit-vitals-histogram}.
+Distributions of the vitals in our training dataset are given in Figure \ref{fig:training-vitals-histogram}.
 The participants are mostly healthy, so these vitals fall in the typical ranges.
 There are several participants who have an irregular heartbeat.
 
@@ -245,73 +335,9 @@ There are several participants who have an irregular heartbeat.
         	\end{axis}
     	\end{tikzpicture}
     \end{subfigure}
-	\begin{subfigure}{0.48\textwidth}
-    	\centering
-    	\begin{tikzpicture}
-        	\begin{axis}[
-            		table/col sep=comma,
-            		ybar,
-            		ylabel=Frequency,
-            		xlabel={Blood pressure [mmHg]},
-            		xmin=50,
-            		xmax=170,
-            		width=\textwidth,
-            		height=5cm,
-            		grid=major,
-            		legend style={at={(.98,.97)}, anchor=north east},
-            	]
-            	\addplot[ybar,bar width=10pt,fill=blue!60,opacity=0.8] table[x index=0, y index=1] {data/bp_sys_histogram.csv};
-            	\addlegendentry{SBP}
-            	\addplot[ybar,bar width=7pt,fill=red!60,opacity=0.7] table[x index=0, y index=1] {data/bp_dia_histogram.csv};
-            	\addlegendentry{DBP}
-        	\end{axis}
-    	\end{tikzpicture}
-    \end{subfigure}
-    \hfill
-    \begin{subfigure}{0.48\textwidth}
-    	\centering
-    	\begin{tikzpicture}
-        	\begin{axis}[
-            		table/col sep=comma,
-            		ybar,
-            		ylabel=Frequency,
-            		xlabel={SpO2 [\%]},
-            		xmin=87,
-            		xmax=101,
-            		width=\textwidth,
-            		height=5cm,
-            		grid=major,
-            		bar width=12pt
-            	]
-            	\addplot[fill=blue!60,opacity=0.8] table[x index=0, y index=1] {data/spo2_histogram.csv};
-        	\end{axis}
-    	\end{tikzpicture}
-    \end{subfigure}
-    \caption{Distributions of chunk summary vitals in PROSIT}
-    \label{fig:prosit-vitals-histogram}
+    \caption{Distributions of chunk summary vitals in training dataset}
+    \label{fig:training-vitals-histogram}
 \end{figure}
-\subsection{Vital Videos}
-
-\subsubsection{Vital Videos Medium}
-
-Used for test.
-
-Pieter's dataset
-Number of unique subjects
-Total duration
-Statistics
-Distributions of metadata
-
-\subsubsection{Vital Videos Ghana}
-
-Used for training.
-
-Pieter's dataset
-Number of unique subjects
-Total duration
-Statistics
-Distributions of metadata
-
 
 \section{Methodology}
 \label{others}
@@ -350,37 +376,10 @@ Bar chart comparing G, CHROM, POS, DeepPhys, MTTS-CAN, VitalLens SNR estimating 
 
 Authors may wish to optionally include extra information (complete proofs, additional experiments and plots) in the appendix. All such materials should be part of the supplemental material (submitted separately) and should NOT be included in the main submission.
 
-
 \section*{References}
 
-
-References follow the acknowledgments in the camera-ready paper. Use unnumbered first-level heading for
-the references. Any choice of citation style is acceptable as long as you are
-consistent. It is permissible to reduce the font size to \verb+small+ (9 point)
-when listing the references.
-Note that the Reference section does not count towards the page limit.
-\medskip
-
-
-{
-\small
-
-
-[1] Alexander, J.A.\ \& Mozer, M.C.\ (1995) Template-based algorithms for
-connectionist rule extraction. In G.\ Tesauro, D.S.\ Touretzky and T.K.\ Leen
-(eds.), {\it Advances in Neural Information Processing Systems 7},
-pp.\ 609--616. Cambridge, MA: MIT Press.
-
-
-[2] Bower, J.M.\ \& Beeman, D.\ (1995) {\it The Book of GENESIS: Exploring
-  Realistic Neural Models with the GEneral NEural SImulation System.}  New York:
-TELOS/Springer--Verlag.
-
-
-[3] Hasselmo, M.E., Schnell, E.\ \& Barkai, E.\ (1995) Dynamics of learning and
-recall at excitatory recurrent synapses and cholinergic modulation in rat
-hippocampal region CA3. {\it Journal of Neuroscience} {\bf 15}(7):5249-5262.
-}
+\bibliographystyle{plain}
+\bibliography{paper}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
