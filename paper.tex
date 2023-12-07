@@ -125,6 +125,7 @@ Each participant is randomly assigned to be part of either the \textit{training}
 Vital Videos is a large, diverse dataset for rPPG collected in Belgium \cite{toye2023vital}.
 It is the largest dataset we are aware of that is available for research without academic affiliation.
 We use a slightly extended version of the medium instantiation (``VV-Medium''), which consists of 296 participants.
+% TODO pull from data
 Both camera and participants are stationary in this dataset.
 
 \paragraph{Pre-processing.}
@@ -367,7 +368,11 @@ The final evaluation of the VitalLens estimation engine is conducted by measurin
 	\item The test set of the VV-Ghana-Small dataset.
 \end{itemize}
 
-The evaluation metrics include key vital signs such as heart rate and respiratory rate. We compare the performance of VitalLens with existing methods, including G, CHROM, POS, DeepPhys, and MTTS-CAN, using metrics such as Signal-to-Noise Ratio (SNR) and Mean Absolute Error (MAE).
+The evaluation metrics focus on the key vital signs, \textit{heart rate} and \textit{respiratory rate}.
+We compare the performance of VitalLens with existing methods, including G, CHROM, POS, DeepPhys, and MTTS-CAN, using metrics such as Signal-to-Noise Ratio (SNR) and Mean Absolute Error (MAE).
+
+We furthermore conduct a regression analysis using the chunk metadata to predict the performance of VitalLens.
+This helps us identify the environmental factor affecting performance, and informs ``how to use'' advice offered to users of VitalLens.
 
 This methodology ensures a thorough assessment of the VitalLens estimation engine, considering diverse data sources and real-world conditions.
 The results and discussions in the following sections provide insights into the effectiveness and limitations of the proposed approach.
@@ -377,7 +382,49 @@ The results and discussions in the following sections provide insights into the 
 
 \subsection{Vitals estimation}
 
-Table comparing G, CHROM, POS, DeepPhys, MTTS-CAN, VitalLens
+TODO evaluate for all methods
+
+\begin{table}[h!]
+ 	\caption{Vitals estimation results on VV-Medium}
+ 	\label{tab:results-vv-medium}
+ 	\centering
+  	\csvreader[
+		tabular=lcccccc,
+    	table head=\toprule Method & \multicolumn{1}{c}{Heart rate} & \multicolumn{2}{c}{Pulse wave} & \multicolumn{1}{c}{Respiratory rate} & \multicolumn{2}{c}{Respiration wave} \\ & MAE $\downarrow$ & SNR $\uparrow$ & $r \uparrow$ & MAE $\downarrow$ & SNR $\uparrow$ & $r \uparrow$ \\ \midrule,
+    	table foot=\bottomrule,
+    	late after line=\\,
+    	before reading={\catcode`\%=12}, after reading={\catcode`\%=14}
+  	]{data/results_vv_medium.csv}{}%
+  {\csvcoli & \sisetup{round-mode=places,round-precision=2}\num{\csvcolii} & \sisetup{round-mode=places,round-precision=2}\num{\csvcoliii} & \sisetup{round-mode=places,round-precision=2}\num{\csvcoliv} & \sisetup{round-mode=places,round-precision=2}\num{\csvcolv} & \sisetup{round-mode=places,round-precision=2}\num{\csvcolvi} & \sisetup{round-mode=places,round-precision=2}\num{\csvcolvii} }
+\end{table}
+
+\begin{table}[h!]
+ 	\caption{Vitals estimation results on PROSIT test set}
+ 	\label{tab:results-prosit-test}
+ 	\centering
+  	\csvreader[
+		tabular=lcccccc,
+    	table head=\toprule Method & \multicolumn{1}{c}{Heart rate} & \multicolumn{2}{c}{Pulse wave} & \multicolumn{1}{c}{Respiratory rate} & \multicolumn{2}{c}{Respiration wave} \\ & MAE $\downarrow$ & SNR $\uparrow$ & $r \uparrow$ & MAE $\downarrow$ & SNR $\uparrow$ & $r \uparrow$ \\ \midrule,
+    	table foot=\bottomrule,
+    	late after line=\\,
+    	before reading={\catcode`\%=12}, after reading={\catcode`\%=14}
+  	]{data/results_prosit_test.csv}{}%
+  {\csvcoli & \sisetup{round-mode=places,round-precision=2}\num{\csvcolii} & \sisetup{round-mode=places,round-precision=2}\num{\csvcoliii} & \sisetup{round-mode=places,round-precision=2}\num{\csvcoliv} & \sisetup{round-mode=places,round-precision=2}\num{\csvcolv} & \sisetup{round-mode=places,round-precision=2}\num{\csvcolvi} & \sisetup{round-mode=places,round-precision=2}\num{\csvcolvii} }
+\end{table}
+
+\begin{table}[h!]
+ 	\caption{Vitals estimation results on VV-Ghana-Small test set}
+ 	\label{tab:results-vv-ghana-small-test}
+ 	\centering
+  	\csvreader[
+		tabular=lcccccc,
+    	table head=\toprule Method & \multicolumn{1}{c}{Heart rate} & \multicolumn{2}{c}{Pulse wave} & \multicolumn{1}{c}{Respiratory rate} & \multicolumn{2}{c}{Respiration wave} \\ & MAE $\downarrow$ & SNR $\uparrow$ & $r \uparrow$ & MAE $\downarrow$ & SNR $\uparrow$ & $r \uparrow$ \\ \midrule,
+    	table foot=\bottomrule,
+    	late after line=\\,
+    	before reading={\catcode`\%=12}, after reading={\catcode`\%=14}
+  	]{data/results_vv_ghana_test.csv}{}%
+  {\csvcoli & \sisetup{round-mode=places,round-precision=2}\num{\csvcolii} & \sisetup{round-mode=places,round-precision=2}\num{\csvcoliii} & \sisetup{round-mode=places,round-precision=2}\num{\csvcoliv} & \sisetup{round-mode=places,round-precision=2}\num{\csvcolv} & \sisetup{round-mode=places,round-precision=2}\num{\csvcolvi} & \sisetup{round-mode=places,round-precision=2}\num{\csvcolvii} }
+\end{table}
 
 \subsection{Which factors impact estimation performance?}
 
