@@ -207,15 +207,7 @@ results_prosit_test_summary.to_csv("data/results_prosit_test.csv", index=False)
 categorical_cols = ['camera_stationary', 'subject_gender', 'subject_skin_type']
 numerical_cols = ['subject_age', 'subject_illuminance_d', 'subject_movement']
 
-## VV-Medium - SNR
-# vv_medium_pulse_snr_reg = results_vv_medium[categorical_cols + numerical_cols + ['pulse_snr_vl']].dropna()
-# X_categorical = pd.get_dummies(vv_medium_pulse_snr_reg[categorical_cols], columns=categorical_cols, drop_first=True)
-# X = pd.concat([vv_medium_pulse_snr_reg[numerical_cols], X_categorical], axis=1).astype('float64')
-# y = vv_medium_pulse_snr_reg['pulse_snr_vl'].astype(float)
-# model = sm.OLS(y, X).fit()
-# print("VV-Medium")
-# print(model.summary())
-## VV-Medium - MAE
+## VV-Medium - HR MAE
 vv_medium_pulse_mae_reg = results_vv_medium[categorical_cols + numerical_cols + ['pulse_mae_vl']].dropna()
 X_categorical = pd.get_dummies(vv_medium_pulse_mae_reg[categorical_cols], columns=categorical_cols, drop_first=True)
 X = pd.concat([vv_medium_pulse_mae_reg[numerical_cols], X_categorical], axis=1).astype('float64')
@@ -226,20 +218,26 @@ print("VV-Medium")
 print(model.summary())
 print(model.summary().as_latex())
 
-## PROSIT - SNR
-# prosit_pulse_snr_reg = results_prosit_test[categorical_cols + numerical_cols + ['pulse_snr_vl']].dropna()
-# X_categorical = pd.get_dummies(prosit_pulse_snr_reg[categorical_cols], columns=categorical_cols, drop_first=True)
-# X = pd.concat([prosit_pulse_snr_reg[numerical_cols], X_categorical], axis=1).astype('float64')
-# y = prosit_pulse_snr_reg['pulse_snr_vl'].astype(float)
-# model = sm.OLS(y, X).fit()
-# print("VV-Medium")
-# print(model.summary())
-## PROSIT - MAE
+## PROSIT - HR MAE
 prosit_pulse_mae_reg = results_prosit_test[categorical_cols + numerical_cols + ['pulse_mae_vl']].dropna()
 X_categorical = pd.get_dummies(prosit_pulse_mae_reg[categorical_cols], columns=categorical_cols, drop_first=True)
 X = pd.concat([prosit_pulse_mae_reg[numerical_cols], X_categorical], axis=1).astype('float64')
 X = sm.add_constant(X)
 y = prosit_pulse_mae_reg['pulse_mae_vl'].astype(float)
+model = sm.OLS(y, X).fit()
+print("VV-Medium")
+print(model.summary())
+print(model.summary().as_latex())
+
+categorical_cols = ['camera_stationary', 'subject_gender']
+numerical_cols = ['subject_age', 'subject_illuminance_d', 'subject_movement']
+
+## PROSIT - RR MAE
+prosit_resp_mae_reg = results_prosit_test[categorical_cols + numerical_cols + ['resp_mae_vl']].dropna()
+X_categorical = pd.get_dummies(prosit_resp_mae_reg[categorical_cols], columns=categorical_cols, drop_first=True)
+X = pd.concat([prosit_resp_mae_reg[numerical_cols], X_categorical], axis=1).astype('float64')
+X = sm.add_constant(X)
+y = prosit_resp_mae_reg['resp_mae_vl'].astype(float)
 model = sm.OLS(y, X).fit()
 print("VV-Medium")
 print(model.summary())

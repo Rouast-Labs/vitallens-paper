@@ -141,7 +141,7 @@ Both camera and participants are stationary in this dataset.
 
 We pre-process VV-Medium using the same steps applied to PROSIT.
 As part of this step, we create small chunks, calculate summary vitals, and extract further metadata.
-Note that for many chunks, the missing respiratory signal was synthetically created with an older version of VitalLens and then manually verified.
+Note that for most chunks, the missing respiratory signal was synthetically created.\footnote{This was done using an earlier version of our model trained on PROSIT. We then manually verified the correctness by visual inspection of both the label and video, and discarded bad labels.}
 
 \begin{table}[h!]
  	\caption{VV-Medium Dataset Size}
@@ -175,7 +175,7 @@ Both camera and participants are stationary in this dataset.
 
 We pre-process VV-Ghana-Small using the same steps applied to PROSIT.
 As part of this step, we create small chunks, calculate summary vitals, and extract further metadata.
-Note that for some chunks, the missing respiratory signal was synthetically created with an older version of VitalLens and then manually verified.
+Note that for some chunks, the missing respiratory signal was synthetically created using the same procedure as for VV-Medium.
 
 \begin{table}[h!]
  	\caption{VV-Ghana-Small Dataset Size}
@@ -575,7 +575,51 @@ Based on these results, we advise users of VitalLens that for best performance t
 
 \subsection{Which factors impact respiratory rate estimation performance?}
 
+For our analysis of the impact on respiratory rate estimation, we consider the factors \texttt{age}, \texttt{camera\_stationary}, \texttt{gender\_male}, \texttt{illuminance\_var}, and \texttt{movement}.
+We conduct another OLS regressions on the PROSIT test set using these factors to predict the respiratory rate estimation MAE - the results are reported in Table \ref{tab:vv-rr-regression-prosit}.
 
+\begin{table}[h!]
+\begin{center}
+\caption{Regression analysis of factors affecting respiratory rate estimation on PROSIT test set}
+\label{tab:vv-rr-regression-prosit}
+\begin{tabular}{lclc}
+\toprule
+\textbf{Dep. Variable:}          &  resp\_mae\_vl   & \textbf{  R-squared:         } &     0.126   \\
+\textbf{Model:}                  &       OLS        & \textbf{  Adj. R-squared:    } &     0.122   \\
+\textbf{Method:}                 &  Least Squares   & \textbf{  F-statistic:       } &     40.11   \\
+\textbf{No. Observations:}       &        1403      & \textbf{  Prob (F-statistic):} &  1.28e-38   \\
+\textbf{Df Residuals:}           &        1397      & \textbf{  AIC:               } &     396.3   \\
+\textbf{Df Model:}               &           5      & \textbf{  BIC:               } &     427.8   \\
+\bottomrule
+\end{tabular}
+\begin{tabular}{lcccccc}
+                                 & \textbf{coef} & \textbf{std err} & \textbf{t} & \textbf{P$> |$t$|$} & \textbf{[0.025} & \textbf{0.975]}  \\
+\midrule
+\textbf{intercept}               &       0.7648  &        0.031     &    24.842  &         0.000        &        0.704    &        0.825     \\
+\textbf{age}                     &      -0.0025  &        0.001     &    -4.849  &         0.000        &       -0.004    &       -0.001     \\
+\textbf{illuminance\_var}        &       0.5166  &        0.091     &     5.682  &         0.000        &        0.338    &        0.695     \\
+\textbf{movement}                &       0.5376  &        0.048     &    11.210  &         0.000        &        0.444    &        0.632     \\
+\textbf{camera\_stationary}      &      -0.0351  &        0.020     &    -1.731  &         0.084        &       -0.075    &        0.005     \\
+\textbf{gender\_male}            &      -0.0076  &        0.016     &    -0.481  &         0.630        &       -0.039    &        0.023     \\
+\bottomrule
+\end{tabular}
+\end{center}
+\end{table}
+
+The regression itself and all the factors \texttt{age}, \texttt{illuminance\_var}, and \texttt{movement} have significant effects at the 5\% level.
+Contrary to expectations, \texttt{camera\_stationary} does not have a significant effect, only significant at 8.5\%.
+
+\begin{itemize}
+	\item \texttt{age} has a weak negative effect, indicating that estimations were slightly more accurate for older participants.
+	\item \texttt{illuminance\_var} had a positive effect, meaning that estimations were worse with higher variance in facial illumination of participants.
+	\item \texttt{movement} had a positive effect, meaning that estimations were worse when participants moved more.
+\end{itemize}
+
+The factors are collectively able to explain 12.6\% of the variance of the absolute errors in RR estimation.
+As expected, participant movement degrades the estimation quality for the respiratory rate.
+It is surprising that variation in the illumination of the participant's face impacts the estimation to a similar degree, and that this effect is stronger and more significant than the stationarity of the camera.
+
+These results reinforce the advice given to users of VitalLens.
 
 \subsection{Impact of subject movement}
 
