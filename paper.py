@@ -140,6 +140,14 @@ raw_pos_prosit = pd.read_csv("raw_data/evaluate_pos_prosit.csv")
 raw_pos_prosit = raw_pos_prosit[['chunk_id', 'gt_hr_pox', 'gt_rr', 'pred_hr', 'pred_rr', 'conf_pulse_mean', 'conf_resp_mean', 'pulse_mae', 'pulse_mse', 'pulse_rmse', 'pulse_cor', 'pulse_snr', 'hr_ae', 'resp_mae', 'resp_mse', 'resp_rmse', 'resp_cor', 'resp_snr', 'rr_ae', 'live_error', 'live_error_t']]
 raw_pos_prosit = raw_pos_prosit.rename(columns={'chunk_id': 'id'})
 results_prosit_test = merge_force_suffix(results_prosit_test, raw_pos_prosit, on='id', how='inner', suffixes=['', '_pos'])
+raw_deep_phys_prosit = pd.read_csv("raw_data/evaluate_deep_phys_prosit.csv")
+raw_deep_phys_prosit = raw_deep_phys_prosit[['chunk_id', 'gt_hr_pox', 'gt_rr', 'pred_hr', 'pred_rr', 'conf_pulse_mean', 'conf_resp_mean', 'pulse_mae', 'pulse_mse', 'pulse_rmse', 'pulse_cor', 'pulse_snr', 'hr_ae', 'resp_mae', 'resp_mse', 'resp_rmse', 'resp_cor', 'resp_snr', 'rr_ae', 'live_error', 'live_error_t']]
+raw_deep_phys_prosit = raw_deep_phys_prosit.rename(columns={'chunk_id': 'id'})
+results_prosit_test = merge_force_suffix(results_prosit_test, raw_deep_phys_prosit, on='id', how='inner', suffixes=['', '_deepphys'])
+raw_mtts_can_prosit = pd.read_csv("raw_data/evaluate_mtts_can_prosit_8.csv")
+raw_mtts_can_prosit = raw_mtts_can_prosit[['chunk_id', 'gt_hr_pox', 'gt_rr', 'pred_hr', 'pred_rr', 'conf_pulse_mean', 'conf_resp_mean', 'pulse_mae', 'pulse_mse', 'pulse_rmse', 'pulse_cor', 'pulse_snr', 'hr_ae', 'resp_mae', 'resp_mse', 'resp_rmse', 'resp_cor', 'resp_snr', 'rr_ae', 'live_error', 'live_error_t']]
+raw_mtts_can_prosit = raw_mtts_can_prosit.rename(columns={'chunk_id': 'id'})
+results_prosit_test = merge_force_suffix(results_prosit_test, raw_mtts_can_prosit, on='id', how='inner', suffixes=['', '_mtts'])
 
 # Import for VV
 raw_plethnet_vv = pd.read_csv("raw_data/evaluate_plethnet_v2_72_vv_30.csv")
@@ -158,11 +166,21 @@ raw_pos_vv = pd.read_csv("raw_data/evaluate_pos_vv.csv")
 raw_pos_vv = raw_pos_vv[['chunk_id', 'pred_hr', 'pred_rr', 'conf_pulse_mean', 'conf_resp_mean', 'pulse_mae', 'pulse_mse', 'pulse_rmse', 'pulse_cor', 'pulse_snr', 'hr_ae', 'resp_mae', 'resp_mse', 'resp_rmse', 'resp_cor', 'resp_snr', 'rr_ae', 'live_error', 'live_error_t']]
 raw_pos_vv = raw_pos_vv.rename(columns={'chunk_id': 'id'})
 results_vv = merge_force_suffix(results_vv, raw_pos_vv, on='id', how='inner', suffixes=['', '_pos'])
+raw_deep_phys_vv = pd.read_csv("raw_data/evaluate_deep_phys_vv.csv")
+raw_deep_phys_vv = raw_deep_phys_vv[['chunk_id', 'gt_hr_pox', 'gt_rr', 'pred_hr', 'pred_rr', 'conf_pulse_mean', 'conf_resp_mean', 'pulse_mae', 'pulse_mse', 'pulse_rmse', 'pulse_cor', 'pulse_snr', 'hr_ae', 'resp_mae', 'resp_mse', 'resp_rmse', 'resp_cor', 'resp_snr', 'rr_ae', 'live_error', 'live_error_t']]
+raw_deep_phys_vv = raw_deep_phys_vv.rename(columns={'chunk_id': 'id'})
+results_vv = merge_force_suffix(results_vv, raw_deep_phys_vv, on='id', how='inner', suffixes=['', '_deepphys'])
+raw_mtts_can_vv = pd.read_csv("raw_data/evaluate_mtts_can_vv_8.csv")
+raw_mtts_can_vv = raw_mtts_can_vv[['chunk_id', 'gt_hr_pox', 'gt_rr', 'pred_hr', 'pred_rr', 'conf_pulse_mean', 'conf_resp_mean', 'pulse_mae', 'pulse_mse', 'pulse_rmse', 'pulse_cor', 'pulse_snr', 'hr_ae', 'resp_mae', 'resp_mse', 'resp_rmse', 'resp_cor', 'resp_snr', 'rr_ae', 'live_error', 'live_error_t']]
+raw_mtts_can_vv = raw_mtts_can_vv.rename(columns={'chunk_id': 'id'})
+results_vv = merge_force_suffix(results_vv, raw_mtts_can_vv, on='id', how='inner', suffixes=['', '_mtts'])
+raw_plethnet_64_vv = pd.read_csv("raw_data/evaluate_plethnet_v2_64_vv.csv")
+raw_plethnet_64_vv = raw_plethnet_64_vv[['chunk_id', 'gt_hr_pox', 'gt_rr', 'pred_hr', 'pred_rr', 'conf_pulse_mean', 'conf_resp_mean', 'pulse_mae', 'pulse_mse', 'pulse_rmse', 'pulse_cor', 'pulse_snr', 'hr_ae', 'resp_mae', 'resp_mse', 'resp_rmse', 'resp_cor', 'resp_snr', 'rr_ae', 'live_error', 'live_error_t']]
+raw_plethnet_64_vv = raw_plethnet_64_vv.rename(columns={'chunk_id': 'id'})
+results_vv = merge_force_suffix(results_vv, raw_plethnet_64_vv, on='id', how='inner', suffixes=['', '_vl_64'])
 
-#methods = ['G', 'CHROM', 'POS', 'DeepPhys', 'MTTS-CAN', 'VitalLens']
-#methods_print = ['g', 'chrom', 'pos', 'deepphys', 'mtts', 'vl']
-methods = ['g', 'chrom', 'pos', 'vl']
-methods_print = ['G', 'CHROM', 'POS', 'VitalLens']
+methods = ['g', 'chrom', 'pos', 'deepphys', 'mtts', 'vl']
+methods_print = ['G', 'CHROM', 'POS', 'DeepPhys', 'MTTS-CAN', 'VitalLens']
 
 ## VV-Medium
 results_vv_medium = results_vv[~results_vv['session_description'].str.contains('ghana')]
@@ -174,6 +192,7 @@ results_vv_medium_summary = pd.DataFrame({
   'rr_mae': [results_vv_medium['rr_ae_{}'.format(m)].mean() for m in methods],
   'resp_snr': [results_vv_medium['resp_snr_{}'.format(m)].mean() for m in methods],
   'resp_cor': [results_vv_medium['resp_cor_{}'.format(m)].mean() for m in methods],
+  'inf_speed': [3.4, 4.2, 3.6, 9.8, 22.1, 18.0]
 }).fillna(0)
 results_vv_medium_summary.to_csv("data/results_vv_medium.csv", index=False)
 
@@ -204,41 +223,153 @@ results_prosit_test_summary.to_csv("data/results_prosit_test.csv", index=False)
 
 # == Regression ==
 
-categorical_cols = ['camera_stationary', 'subject_gender', 'subject_skin_type']
-numerical_cols = ['subject_age', 'subject_illuminance_d', 'subject_movement']
-
-## VV-Medium - HR MAE
-vv_medium_pulse_mae_reg = results_vv_medium[categorical_cols + numerical_cols + ['pulse_mae_vl']].dropna()
-X_categorical = pd.get_dummies(vv_medium_pulse_mae_reg[categorical_cols], columns=categorical_cols, drop_first=True)
-X = pd.concat([vv_medium_pulse_mae_reg[numerical_cols], X_categorical], axis=1).astype('float64')
+## VV-Medium - HR SNR
+categorical_cols = ['subject_gender', 'subject_skin_type']
+numerical_cols = ['subject_age', 'subject_illuminance_d', 'subject_movement', 'frame_avg_hr_pox']
+vv_medium_pulse_snr_reg = results_vv_medium[categorical_cols + numerical_cols + ['pulse_snr_vl']].dropna()
+X_categorical = pd.get_dummies(vv_medium_pulse_snr_reg[categorical_cols], columns=categorical_cols, drop_first=True)
+X = pd.concat([vv_medium_pulse_snr_reg[numerical_cols], X_categorical], axis=1).astype('float64')
 X = sm.add_constant(X)
-y = vv_medium_pulse_mae_reg['pulse_mae_vl'].astype(float)
+y = vv_medium_pulse_snr_reg['pulse_snr_vl'].astype(float)
 model = sm.OLS(y, X).fit()
-print("VV-Medium")
+print("VV-Medium HR")
 print(model.summary())
 print(model.summary().as_latex())
 
-## PROSIT - HR MAE
-prosit_pulse_mae_reg = results_prosit_test[categorical_cols + numerical_cols + ['pulse_mae_vl']].dropna()
-X_categorical = pd.get_dummies(prosit_pulse_mae_reg[categorical_cols], columns=categorical_cols, drop_first=True)
-X = pd.concat([prosit_pulse_mae_reg[numerical_cols], X_categorical], axis=1).astype('float64')
+## PROSIT - HR SNR
+categorical_cols = ['camera_stationary']
+numerical_cols = ['subject_illuminance_d', 'subject_movement']
+prosit_pulse_snr_reg = results_prosit_test[categorical_cols + numerical_cols + ['pulse_snr_vl']].dropna()
+X_categorical = pd.get_dummies(prosit_pulse_snr_reg[categorical_cols], columns=categorical_cols, drop_first=True)
+X = pd.concat([prosit_pulse_snr_reg[numerical_cols], X_categorical], axis=1).astype('float64')
 X = sm.add_constant(X)
-y = prosit_pulse_mae_reg['pulse_mae_vl'].astype(float)
+y = prosit_pulse_snr_reg['pulse_snr_vl'].astype(float)
 model = sm.OLS(y, X).fit()
-print("VV-Medium")
+print("PROSIT HR")
 print(model.summary())
 print(model.summary().as_latex())
 
-categorical_cols = ['camera_stationary', 'subject_gender']
-numerical_cols = ['subject_age', 'subject_illuminance_d', 'subject_movement']
-
-## PROSIT - RR MAE
-prosit_resp_mae_reg = results_prosit_test[categorical_cols + numerical_cols + ['resp_mae_vl']].dropna()
-X_categorical = pd.get_dummies(prosit_resp_mae_reg[categorical_cols], columns=categorical_cols, drop_first=True)
-X = pd.concat([prosit_resp_mae_reg[numerical_cols], X_categorical], axis=1).astype('float64')
+## VV-Medium - RR SNR
+categorical_cols = ['subject_gender', 'subject_skin_type']
+numerical_cols = ['subject_age', 'subject_illuminance_d', 'subject_movement', 'frame_avg_rr']
+vv_medium_resp_snr_reg = results_vv_medium[categorical_cols + numerical_cols + ['resp_snr_vl']].dropna()
+X_categorical = pd.get_dummies(vv_medium_resp_snr_reg[categorical_cols], columns=categorical_cols, drop_first=True)
+X = pd.concat([vv_medium_resp_snr_reg[numerical_cols], X_categorical], axis=1).astype('float64')
 X = sm.add_constant(X)
-y = prosit_resp_mae_reg['resp_mae_vl'].astype(float)
+y = vv_medium_resp_snr_reg['resp_snr_vl'].astype(float)
 model = sm.OLS(y, X).fit()
-print("VV-Medium")
+print("VV-Medium RR")
 print(model.summary())
 print(model.summary().as_latex())
+
+## PROSIT - RR SNR
+categorical_cols = ['camera_stationary']
+numerical_cols = ['subject_illuminance_d', 'subject_movement']
+prosit_resp_snr_reg = results_prosit_test[categorical_cols + numerical_cols + ['resp_snr_vl']].dropna()
+X_categorical = pd.get_dummies(prosit_resp_snr_reg[categorical_cols], columns=categorical_cols, drop_first=True)
+X = pd.concat([prosit_resp_snr_reg[numerical_cols], X_categorical], axis=1).astype('float64')
+X = sm.add_constant(X)
+y = prosit_resp_snr_reg['resp_snr_vl'].astype(float)
+model = sm.OLS(y, X).fit()
+print("PROSIT RR")
+print(model.summary())
+print(model.summary().as_latex())
+
+# == Bar charts ==
+
+## subject_movement
+bins = [0., .05, .1, .15, .25, 1.]
+bin_names = ["No movements", "Few movements", "Some movements", "Moderate movement", "Extreme movement"]
+impact_movement = pd.DataFrame({
+  'bin_left': bins[:-1],
+  'bin_right': bins[1:],
+  'bin': ["{} [{:.2f}; {:.2f}]".format(n, l, r) for n, l, r in zip(bin_names, bins[:-1], bins[1:])],
+  'n': results_prosit_test.groupby(pd.cut(results_prosit_test['subject_movement'], bins))['pulse_snr_vl'].count().reset_index()['pulse_snr_vl'],
+  'pulse_snr_mean': results_prosit_test.groupby(pd.cut(results_prosit_test['subject_movement'], bins))['pulse_snr_vl'].mean().reset_index()['pulse_snr_vl'],
+  'pulse_snr_sd': results_prosit_test.groupby(pd.cut(results_prosit_test['subject_movement'], bins))['pulse_snr_vl'].std().reset_index()['pulse_snr_vl'],
+  'resp_snr_mean': results_prosit_test.groupby(pd.cut(results_prosit_test['subject_movement'], bins))['resp_snr_vl'].mean().reset_index()['resp_snr_vl'],
+  'resp_snr_sd': results_prosit_test.groupby(pd.cut(results_prosit_test['subject_movement'], bins))['resp_snr_vl'].std().reset_index()['resp_snr_vl'],
+}).fillna(0)
+impact_movement.to_csv("data/impact_movement.csv", index=False)
+
+## subject_illuminance_d
+bins = [0., .05, .1, .15, .25, 1.]
+bin_names = ["Perfect illuminance", "Few variation", "Some variation", "Moderate variation", "Extreme variation"]
+impact_illuminance = pd.DataFrame({
+  'bin_left': bins[:-1],
+  'bin_right': bins[1:],
+  'bin': ["{} [{:.2f}; {:.2f}]".format(n, l, r) for n, l, r in zip(bin_names, bins[:-1], bins[1:])],
+  'n': results_prosit_test.groupby(pd.cut(results_prosit_test['subject_illuminance_d'], bins))['pulse_snr_vl'].count().reset_index()['pulse_snr_vl'],
+  'pulse_snr_mean': results_prosit_test.groupby(pd.cut(results_prosit_test['subject_illuminance_d'], bins))['pulse_snr_vl'].mean().reset_index()['pulse_snr_vl'],
+  'pulse_snr_sd': results_prosit_test.groupby(pd.cut(results_prosit_test['subject_illuminance_d'], bins))['pulse_snr_vl'].std().reset_index()['pulse_snr_vl'],
+  'resp_snr_mean': results_prosit_test.groupby(pd.cut(results_prosit_test['subject_illuminance_d'], bins))['resp_snr_vl'].mean().reset_index()['resp_snr_vl'],
+  'resp_snr_sd': results_prosit_test.groupby(pd.cut(results_prosit_test['subject_illuminance_d'], bins))['resp_snr_vl'].std().reset_index()['resp_snr_vl']
+}).fillna(0)
+impact_illuminance.to_csv("data/impact_illuminance.csv", index=False)
+
+## subject_age
+bins = [0, 20, 40, 60, 80, 100]
+impact_age = pd.DataFrame({
+  'bin': ["[{}; {}]".format(l, r) for l, r in zip(bins[:-1], bins[1:])],
+  'n': results_vv_medium.groupby(pd.cut(results_vv_medium['subject_age'], bins))['pulse_snr_vl'].count().reset_index()['pulse_snr_vl'],
+  'pulse_snr_mean': results_vv_medium.groupby(pd.cut(results_vv_medium['subject_age'], bins))['pulse_snr_vl'].mean().reset_index()['pulse_snr_vl'],
+  'pulse_snr_sd': results_vv_medium.groupby(pd.cut(results_vv_medium['subject_age'], bins))['pulse_snr_vl'].std().reset_index()['pulse_snr_vl'],
+  'resp_snr_mean': results_vv_medium.groupby(pd.cut(results_vv_medium['subject_age'], bins))['resp_snr_vl'].mean().reset_index()['resp_snr_vl'],
+  'resp_snr_sd': results_vv_medium.groupby(pd.cut(results_vv_medium['subject_age'], bins))['resp_snr_vl'].std().reset_index()['resp_snr_vl']
+}).fillna(0)
+impact_age.to_csv("data/impact_age.csv", index=False)
+
+## skin_type
+impact_skin_type = pd.DataFrame({
+  'bin': [1, 2, 3, 4, 5, 6],
+  'n': results_vv_medium.groupby('subject_skin_type')['pulse_snr_vl'].count().reset_index()['pulse_snr_vl'],
+  'pulse_snr_mean': results_vv_medium.groupby('subject_skin_type')['pulse_snr_vl'].mean().reset_index()['pulse_snr_vl'],
+  'pulse_snr_sd': results_vv_medium.groupby('subject_skin_type')['pulse_snr_vl'].std().reset_index()['pulse_snr_vl'],
+  'resp_snr_mean': results_vv_medium.groupby('subject_skin_type')['resp_snr_vl'].mean().reset_index()['resp_snr_vl'],
+  'resp_snr_sd': results_vv_medium.groupby('subject_skin_type')['resp_snr_vl'].std().reset_index()['resp_snr_vl']
+}).fillna(0)
+impact_skin_type.to_csv("data/impact_skin_type.csv", index=False)
+impact_skin_type_comparison = pd.DataFrame({
+  'bin': [1, 2, 3, 4, 5, 6],
+  'n': results_vv_medium.groupby('subject_skin_type')['pulse_snr_vl'].count().reset_index()['pulse_snr_vl'],
+  'pulse_snr_mean_vl': results_vv_medium.groupby('subject_skin_type')['pulse_snr_vl'].mean().reset_index()['pulse_snr_vl'],
+  'pulse_snr_sd_vl': results_vv_medium.groupby('subject_skin_type')['pulse_snr_vl'].std().reset_index()['pulse_snr_vl'],
+  'pulse_snr_mean_pos': results_vv_medium.groupby('subject_skin_type')['pulse_snr_pos'].mean().reset_index()['pulse_snr_pos'],
+  'pulse_snr_sd_pos': results_vv_medium.groupby('subject_skin_type')['pulse_snr_pos'].std().reset_index()['pulse_snr_pos'],
+  'pulse_snr_mean_vl_64': results_vv_medium.groupby('subject_skin_type')['pulse_snr_vl_64'].mean().reset_index()['pulse_snr_vl_64'],
+  'pulse_snr_sd_vl_64': results_vv_medium.groupby('subject_skin_type')['pulse_snr_vl_64'].std().reset_index()['pulse_snr_vl_64'],
+}).fillna(0)
+impact_skin_type_comparison.to_csv("data/impact_skin_type_comparison.csv", index=False)
+
+## hr
+bins = [0., 50., 60., 70., 80., 90., 100., 110., 130.]
+impact_hr = pd.DataFrame({
+  'bin_left': bins[:-1],
+  'bin_right': bins[1:],
+  'bin': ["[{:.0f}; {:.0f}]".format(l, r) for l, r in zip(bins[:-1], bins[1:])],
+  'n': results_vv_medium.groupby(pd.cut(results_vv_medium['frame_avg_hr_pox'], bins))['pulse_snr_vl'].count().reset_index()['pulse_snr_vl'],
+  'pulse_snr_mean': results_vv_medium.groupby(pd.cut(results_vv_medium['frame_avg_hr_pox'], bins))['pulse_snr_vl'].mean().reset_index()['pulse_snr_vl'],
+  'pulse_snr_sd': results_vv_medium.groupby(pd.cut(results_vv_medium['frame_avg_hr_pox'], bins))['pulse_snr_vl'].std().reset_index()['pulse_snr_vl'],
+  'resp_snr_mean': results_vv_medium.groupby(pd.cut(results_vv_medium['frame_avg_hr_pox'], bins))['resp_snr_vl'].mean().reset_index()['resp_snr_vl'],
+  'resp_snr_sd': results_vv_medium.groupby(pd.cut(results_vv_medium['frame_avg_hr_pox'], bins))['resp_snr_vl'].std().reset_index()['resp_snr_vl']
+}).fillna(0)
+impact_hr.to_csv("data/impact_hr.csv", index=False)
+
+## rr
+bins = [0., 10., 15., 20., 25., 40.]
+impact_rr = pd.DataFrame({
+  'bin_left': bins[:-1],
+  'bin_right': bins[1:],
+  'bin': ["[{:.0f}; {:.0f}]".format(l, r) for l, r in zip(bins[:-1], bins[1:])],
+  'n': results_vv_medium.groupby(pd.cut(results_vv_medium['frame_avg_rr'], bins))['pulse_snr_vl'].count().reset_index()['pulse_snr_vl'],
+  'pulse_snr_mean': results_vv_medium.groupby(pd.cut(results_vv_medium['frame_avg_rr'], bins))['pulse_snr_vl'].mean().reset_index()['pulse_snr_vl'],
+  'pulse_snr_sd': results_vv_medium.groupby(pd.cut(results_vv_medium['frame_avg_rr'], bins))['pulse_snr_vl'].std().reset_index()['pulse_snr_vl'],
+  'resp_snr_mean': results_vv_medium.groupby(pd.cut(results_vv_medium['frame_avg_rr'], bins))['resp_snr_vl'].mean().reset_index()['resp_snr_vl'],
+  'resp_snr_sd': results_vv_medium.groupby(pd.cut(results_vv_medium['frame_avg_rr'], bins))['resp_snr_vl'].std().reset_index()['resp_snr_vl']
+}).fillna(0)
+impact_rr.to_csv("data/impact_rr.csv", index=False)
+
+
+correlation_matrix = chunks_prosit[['frame_avg_hr_pox', 'subject_movement', 'subject_illuminance_d', 'subject_age']].corr()
+print("Correlation Matrix:")
+print(correlation_matrix)

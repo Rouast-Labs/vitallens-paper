@@ -18,6 +18,8 @@
 \usepackage{siunitx}
 \sisetup{group-separator = {,}, group-minimum-digits = 4}
 \usepackage[flushleft]{threeparttable} % For tablenotes
+\usepackage{pgfplotstable}
+\usepackage{enumitem}
 
 \title{VitalLens: Take A Vital Selfie}
 
@@ -25,6 +27,25 @@
   Philipp V.~Rouast \\
   Rouast Labs\\
   \texttt{philipp@rouast.com} \\
+}
+
+\csvreader[before reading=\def\totalparticipantsprosit{0}\def\totalchunksprosit{0}\def\totaltimeprosit{0}\def\totalsessionsprosit{0}]{data/prosit_summary.csv}{participants=\participants,chunks=\chunks,time=\time,sessions=\sessions}{%
+	\pgfmathsetmacro{\totalparticipantsprosit}{\totalparticipantsprosit+\participants}%
+	\pgfmathsetmacro{\totalchunksprosit}{\totalchunksprosit+\chunks}%
+	\pgfmathsetmacro{\totaltimeprosit}{\totaltimeprosit+\time}%
+	\pgfmathsetmacro{\totalsessionsprosit}{\totalsessionsprosit+\sessions}%
+}
+
+\csvreader[before reading=\def\totalparticipantsvvmedium{0}\def\totalchunksvvmedium{0}\def\totaltimevvmedium{0}]{data/vv_medium_summary.csv}{participants=\participants,chunks=\chunks,time=\time}{%
+	\pgfmathsetmacro{\totalparticipantsvvmedium}{\totalparticipantsvvmedium+\participants}%
+	\pgfmathsetmacro{\totalchunksvvmedium}{\totalchunksvvmedium+\chunks}%
+	\pgfmathsetmacro{\totaltimevvmedium}{\totaltimevvmedium+\time}%
+}
+
+\csvreader[before reading=\def\totalparticipantsvvghana{0}\def\totalchunksvvghana{0}\def\totaltimevvghana{0}]{data/vv_ghana_small_summary.csv}{participants=\participants,chunks=\chunks,time=\time}{%
+	\pgfmathsetmacro{\totalparticipantsvvghana}{\totalparticipantsvvghana+\participants}%
+	\pgfmathsetmacro{\totalchunksvvghana}{\totalchunksvvghana+\chunks}%
+	\pgfmathsetmacro{\totaltimevvghana}{\totaltimevvghana+\time}%
 }
 
 
@@ -36,8 +57,10 @@
 
 \begin{abstract}
 This report introduces VitalLens, an app that estimates vital signs such as heart rate and respiration rate from selfie video in real time.
-The estimation engine of VitalLens is a computer vision model trained on a diverse dataset of video and gold-standard ground truth physiological sensor data.
-% TODO: Summarize findings
+VitalLens uses a computer vision model trained on a diverse dataset of video and physiological sensor data.
+We benchmark performance on several diverse datasets, including VV-Medium, which consists of \sisetup{round-mode=places,round-precision=0}\num{\totalparticipantsvvmedium} unique participants.
+VitalLens outperforms several existing methods including POS and MTTS-CAN on all datasets while maintaining a fast inference speed.
+On VV-Medium, VitalLens achieves absolute errors of 0.71 bpm for heart rate estimation, and 0.76 rpm for respiratory rate estimation.
 \end{abstract}
 
 
@@ -51,22 +74,23 @@ This capability holds immense potential for non-invasive and real-time health mo
 Various rPPG approaches have been proposed, including handcrafted algorithms and ones learned from empirical data.
 Handcrafted algorithms offer advantages of fast inference speed and no training data required, but usually lack in accuracy; notable approaches include the original approach G \cite{verkruysse2008remote}, and the more sophisticated CHROM \cite{de2013robust} and POS \cite{wang2017algorithmic}.
 Given enough high-quality data to learn from, learning-based approaches such as DeepPhys \cite{chen2018deep} and MTTS-CAN \cite{liu2020multi} hold the promise of greater accuracy, which they have to trade off against inference speed.
-There are also other learning-based approaches achieving high accuracy, which we do not cover here as they are not aiming to achieve real-time inference.
+There are also other learning-based approaches achieving higher accuracy, which we do not cover here as they are not aiming to achieve real-time inference.
 
 In this context, we introduce VitalLens, an innovative application designed to estimate vital signs, including heart rate and respiratory rate, in real time from selfie videos.
-The underlying estimation engine of VitalLens is built upon a computer vision model trained on a diverse dataset, combining video recordings with gold-standard ground truth physiological sensor data.
-
-[INSERT FIGURE WITH SAMPLE PREDICTIONS FROM VALIDATION SET]
-
 This report focuses on the capabilities and limitation of VitalLens.
-To this end, We present a comprehensive performance evaluation, comparing it with the named existing methods on diverse datasets.
+Our key contributions are:
 
-The remainder of this report is organized as follows: Section \ref{sec:scope} provides an brief overview of the model, Section \ref{sec:datasets} details the datasets used for training and evaluation, Section \ref{sec:methodology} outlines the systematic approach to model development and evaluation, Section \ref{sec:results} presents the results and discussions, and finally, Section \ref{sec:conclusion} concludes the report with implications and future directions.
+\begin{itemize}
+	\item \textbf{Real-time rPPG application.} We introduce VitalLens -- the first widely distributed rPPG application for real time estimation of vitals such as of heart rate and respiratory rate. 
+	\item \textbf{Comprehensive evaluation on a large dataset.} We evaluate the performance of VitalLens on multiple datasets, including the large VV-Medium \cite{toye2023vital} with \sisetup{round-mode=places,round-precision=0}\num{\totalparticipantsvvmedium} participants. VitalLens outperforms G, CHROM, POS, DeepPhys, and MTTS-CAN in terms of estimation accuracy. On VV-Medium, VitalLens achieves absolute errors of 0.71 bpm for heart rate estimation, and 0.76 rpm for respiratory rate estimation, while taking 18 ms to run inference.
+	\item \textbf{Analysis of factors impacting performance.} We systematically investigate factors impacting estimation performance. We find that \textit{participant movement} and \textit{variation of participant illuminance} are the main factors impacting performance. Compared to approaches like POS, VitalLens is less impacted by darker skin types when estimating heart rates. 
+	\item \textbf{Maintaining end-user privacy}. VitalLens runs inference locally, meaning that video and vitals never leave the device.
+\end{itemize}
 
 \section{Model Architecture}
 \label{sec:scope}
 
-The estimation engine built into VitalLens is a computer vision model trained on a diverse dataset of video and gold-standard ground truth physiological data.
+The estimation engine built into VitalLens (henceforth ``VitalLens'') is a computer vision model trained on a diverse dataset of video and gold-standard ground truth physiological data.
 The model architecture is broadly based on the \textit{EfficientNetV2} \cite{tan2021efficient} model family, enhanced with several improvements in architecture and model optimization to enable efficient training and inference in the rPPG domain.
 
 This report does not contain any further detail about the architecture of the model or training methodology - we reserve this for future publication.
@@ -96,15 +120,9 @@ We also collect age, gender, height, and skin type metadata according to the Fit
 
 \paragraph{Pre-processing.}
 We pre-process and split each session into small chunks of 5-20 seconds with valid video and signals.
-As part of this step, we also calculate summary vitals for each chunk from the continuous signals, and extract further metadata such as the amount of participant movement and illumination variation.
+As part of this step, we also calculate summary vitals for each chunk from the continuous signals, and extract further metadata such as the amount of participant movement and illuminance variation.
 
 \paragraph{Dataset size and split.}
-\csvreader[before reading=\def\totalparticipantsprosit{0}\def\totalchunksprosit{0}\def\totaltimeprosit{0}\def\totalsessionsprosit{0}]{data/prosit_summary.csv}{participants=\participants,chunks=\chunks,time=\time,sessions=\sessions}{%
-	\pgfmathsetmacro{\totalparticipantsprosit}{\totalparticipantsprosit+\participants}%
-	\pgfmathsetmacro{\totalchunksprosit}{\totalchunksprosit+\chunks}%
-	\pgfmathsetmacro{\totaltimeprosit}{\totaltimeprosit+\time}%
-	\pgfmathsetmacro{\totalsessionsprosit}{\totalsessionsprosit+\sessions}%
-}
 Development of PROSIT is ongoing.
 As of the writing of this report, it comprises \sisetup{round-mode=places,round-precision=0}\num{\totalparticipantsprosit} unique participants across \sisetup{round-mode=places,round-precision=0}\num{\totalsessionsprosit} recording sessions in 45 different locations.
 This results in a total of \sisetup{round-mode=places,round-precision=0}\num{\totalchunksprosit} chunks or \sisetup{round-mode=places,round-precision=1}\num{\totaltimeprosit} hours of data.
@@ -129,11 +147,6 @@ Each participant is randomly assigned to be part of either the \textit{training}
 
 Vital Videos is a large, diverse dataset for rPPG collected in Belgium \cite{toye2023vital}.
 It is the largest dataset we are aware of that is available for research without academic affiliation.
-\csvreader[before reading=\def\totalparticipantsvvmedium{0}\def\totalchunksvvmedium{0}\def\totaltimevvmedium{0}]{data/vv_medium_summary.csv}{participants=\participants,chunks=\chunks,time=\time}{%
-	\pgfmathsetmacro{\totalparticipantsvvmedium}{\totalparticipantsvvmedium+\participants}%
-	\pgfmathsetmacro{\totalchunksvvmedium}{\totalchunksvvmedium+\chunks}%
-	\pgfmathsetmacro{\totaltimevvmedium}{\totaltimevvmedium+\time}%
-}
 We use a slightly extended version of the medium instantiation (``VV-Medium''), which consists of \sisetup{round-mode=places,round-precision=0}\num{\totalparticipantsvvmedium} participants.
 Both camera and participants are stationary in this dataset.
 
@@ -163,11 +176,6 @@ The entirety of VV-Medium is used to test the capabilities of VitalLens.
 
 Vital Videos Ghana is a new dataset from the authors of Vital Videos aiming to address the insufficient share of participants with skin types 5 and 6 usually found in rPPG datasets.
 It was collected in Ghana, with the majority of participants having skin type 5 or 6.
-\csvreader[before reading=\def\totalparticipantsvvghana{0}\def\totalchunksvvghana{0}\def\totaltimevvghana{0}]{data/vv_ghana_small_summary.csv}{participants=\participants,chunks=\chunks,time=\time}{%
-	\pgfmathsetmacro{\totalparticipantsvvghana}{\totalparticipantsvvghana+\participants}%
-	\pgfmathsetmacro{\totalchunksvvghana}{\totalchunksvvghana+\chunks}%
-	\pgfmathsetmacro{\totaltimevvghana}{\totaltimevvghana+\time}%
-}
 We use a small instantiation (``VV-Ghana-Small''), which consists of \sisetup{round-mode=places,round-precision=0}\num{\totalparticipantsvvghana} participants.
 Both camera and participants are stationary in this dataset.
 
@@ -361,7 +369,7 @@ There are several participants who have an irregular heartbeat.
 \section{Methodology}
 \label{sec:methodology}
 
-To develop and evaluate the VitalLens estimation engine model, we follow a systematic approach involving model training, validation, and testing:
+To develop and evaluate VitalLens, we follow a systematic approach involving model training, validation, and testing:
 
 \paragraph{Model Training.}
 The training process optimizes the model parameters to learn the mapping between facial video signals and ground truth physiological data.
@@ -374,13 +382,18 @@ Since the training dataset is disjoint from both validation sets in terms of par
 We used the validation metrics to select the final model to be used in VitalLens.
 
 \paragraph{Model Testing.}
-The final evaluation of the VitalLens estimation engine is conducted by benchmarking the generalization abilities of the final model on several datasets, all of which are participant-disjoint from both the training and validation datasets:
+The final evaluation of VitalLens is conducted by benchmarking the generalization abilities of the final model on several datasets, all of which are participant-disjoint from both the training and validation datasets:
 
 \begin{itemize}
 	\item The entire VV-Medium dataset, a large and diverse dataset of \sisetup{round-mode=places,round-precision=0}\num{\totalparticipantsvvmedium} participants introduced in Section \ref{sec:datasets}. It includes participants with varying demographics and environmental conditions.
 	\item The test set of the PROSIT dataset. This is important as PROSIT includes camera and participant movement, which is to be expected when VitalLens is used in the wild.
 	\item The test set of the VV-Ghana-Small dataset.
 \end{itemize}
+
+\paragraph{Inference and Privacy.}
+When end-users use VitalLens on their devices, inference runs locally.
+This means that the video and vitals of end-users never leave their devices, which is important to maintain privacy.
+Another benefit is that an internet connection is not required to run VitalLens.
 
 \section{Results and Discussion}
 \label{sec:results}
@@ -415,18 +428,25 @@ We then report the mean for each of these metrics across all chunks.
  	\centering
  	\begin{threeparttable}	
   	\csvreader[
-		tabular=lcccccc,
-    	table head=\toprule Method & \multicolumn{1}{c}{Heart rate} & \multicolumn{2}{c}{Pulse wave} & \multicolumn{1}{c}{Respiratory rate\tnote{a}} & \multicolumn{2}{c}{Respiration wave\tnote{a}} \\ & MAE $\downarrow$ & SNR $\uparrow$ & $r \uparrow$ & MAE $\downarrow$ & SNR $\uparrow$ & $r \uparrow$ \\ \midrule,
+		tabular=lccccccc,
+    	table head=\toprule Method & \multicolumn{1}{c}{Heart rate} & \multicolumn{2}{c}{Pulse wave} & \multicolumn{1}{c}{Respiratory rate\tnote{a}} & \multicolumn{2}{c}{Respiration wave\tnote{a}} & Inference \\ & MAE $\downarrow$ & SNR $\uparrow$ & $r \uparrow$ & MAE $\downarrow$ & SNR $\uparrow$ & $r \uparrow$ & speed in ms\tnote{b} \\ \midrule,
     	table foot=\bottomrule,
     	late after line=\\,
     	before reading={\catcode`\%=12}, after reading={\catcode`\%=14}
   	]{data/results_vv_medium.csv}{}%
-  {\csvcoli & \printMetric{\csvcolii} & \printMetric{\csvcoliii} & \printMetric{\csvcoliv} & \printMetric{\csvcolv} & \printMetric{\csvcolvi} & \printMetric{\csvcolvii} }
+  {\csvcoli & \printMetric{\csvcolii} & \printMetric{\csvcoliii} & \printMetric{\csvcoliv} & \printMetric{\csvcolv} & \printMetric{\csvcolvi} & \printMetric{\csvcolvii} & \sisetup{round-mode=places,round-precision=1}\num{\csvcolviii}}
   \begin{tablenotes}
 	\item[a] Missing respiratory signals were synthetically created and manually verified.
+	\item[b] Time to run inference for a single video frame.
 	\end{tablenotes}
   \end{threeparttable}
 \end{table}
+
+Results for VV-Medium are reported in Table \ref{tab:results-vv-medium}.
+The heart rate and respiratory rate estimated by VitalLens across all chunks was off by 0.71 bpm and 0.76 rpm on average from the gold-standard labels, while taking 18 ms for inference.
+VitalLens beats all other listed methods for all considered evaluation metrics, while maintaining a competitive inference speed that is sufficient to run in real time at 30 fps.\footnote{The inference speeds are for a single video frame, excluding face detection but including all other computation, such as resizing. We measure the inference speeds using our own implementations as an average across 1,000 iterations on a workstation with Nvidia GeForce RTX 3080 and AMD Ryzen 7 3700X.}
+The next best predictions for heart rate and respiratory rate also came from learning-based models MTTS-CAN and DeepPhys, respectively.
+Note that this dataset has a large variety of participants and their demographics, but low amounts of participant and camera movement.
 
 \begin{table}[h!]
  	\caption{Vitals estimation results on PROSIT test set}
@@ -441,6 +461,11 @@ We then report the mean for each of these metrics across all chunks.
   	]{data/results_prosit_test.csv}{}%
   {\csvcoli & \printMetric{\csvcolii} & \printMetric{\csvcoliii} & \printMetric{\csvcoliv} & \printMetric{\csvcolv} & \printMetric{\csvcolvi} & \printMetric{\csvcolvii} }
 \end{table}
+
+The PROSIT test set has a lower variety in participants and their demographics, but it includes both participant and camera movement.
+Results for the PROSIT test set are reported in Table \ref{tab:results-prosit-test} -- again, VitalLens beats all listed methods for all considered evaluation metrics.
+However, we observe that here, the absolute errors achieved by VitalLens for heart rate and respiratory rate are 4.62 bpm and 3.76, respectively -- markedly higher than for VV-Medium.
+This is a first hint that factors like participant and camera movement are the main drivers of lower estimation accuracies. 
 
 \begin{table}[h!]
  	\caption{Vitals estimation results on VV-Ghana-Small test set}
@@ -461,122 +486,173 @@ We then report the mean for each of these metrics across all chunks.
   \end{threeparttable}
 \end{table}
 
-\subsection{Which factors impact heart rate estimation performance?}
+Finally, Table \ref{tab:results-vv-ghana-small-test} lists the results for the VV-Ghana-Small test set.
+The results paint a similar picture as the two previous datasets, with VitalLens beating out the other methods.
+In comparison to VV-Medium, we observe that the errors are generally higher - in this case, this is caused by the demographic differences between the participants.
+We further investigate this in the following sections.
 
-We consider a number of factors that may impact heart rate estimation performance:
+\subsection{Which factors impact estimation performance?}
 
-\begin{itemize}
-	\item \texttt{age}: The age of the participant
-	\item \texttt{camera\_stationary}: Indicates whether the camera is stationary.
-	\item \texttt{gender\_male}: Dummy variable indicating whether the participant is male.
-	\item \texttt{illuminance\_var}: Measures how much the illuminance of the participant's faces varies throughout a chunk, in interval [0,1].
-	\item \texttt{movement}: Measures how much the participant moved throughout the chunk, in interval [0,1].
-	\item \texttt{skin\_type\_x}: Dummy variable indicating whether the participant has skin type x. Base case is skin type 1.
-\end{itemize}
+We consider a number of factors that may impact estimation performance of pulse and respiration.
 
-To investigate which of these factors have a significant impact, we conduct OLS regressions using them to predict the heart rate estimation MAE.
-We perform separate regressions using the chunks of the VV-Medium dataset and the PROSIT test set - the results are reported in Tables \ref{tab:vv-hr-regression-vv} and \ref{tab:vv-hr-regression-prosit}.
+\paragraph{Demographic factors:}
+
+\begin{enumerate}[align=left]
+	\item[\texttt{age}:] The age of the participant.
+	\item[\texttt{gender\_male}:] Dummy variable indicating whether the participant is male.
+	\item[\texttt{hr} / \texttt{rr}:] The heart rate and respiratory rate of the participant.
+	\item[\texttt{skin\_type\_x}:] Dummy variable indicating whether the participant has skin type x. Base case is skin type 1.
+\end{enumerate}
+
+\paragraph{Behavioral/environmental factors:}
+
+\begin{enumerate}[align=left]
+	\item[\texttt{camera\_stationary}:] Indicates whether the camera is stationary.
+	\item[\texttt{illuminance\_var}:] Measures how much the illuminance of the participant's faces varies throughout a chunk, in interval [0,1]. Derived from the luma component of the pixels within the participant's face. Partially caused by movement ($r = 0.2$ for PROSIT).
+	\item[\texttt{movement}:] Measures how much the participant moved throughout the chunk, in interval [0,1]. Derived from the movement of facial landmarks.
+\end{enumerate}
+
+\subsubsection{Pulse wave}
+
+To investigate which factors have a significant impact, we conduct OLS regressions using them to predict the SNR for pulse wave estimation.
+We perform two separate regressions, one using the chunks of the VV-Medium dataset and one for the PROSIT test set - the results are reported in Tables \ref{tab:vv-hr-regression-vv} and \ref{tab:vv-hr-regression-prosit}.
 
 \begin{table}[h!]
 \begin{center}
-\caption{Regression analysis of factors affecting heart rate estimation on VV-Medium}
+\caption{Regression analysis of factors affecting pulse wave estimation on VV-Medium}
 \label{tab:vv-hr-regression-vv}
 \begin{tabular}{lclc}
 \toprule
-\textbf{Dep. Variable:}          &  HR MAE          & \textbf{  R-squared:         } &     0.075   \\
-\textbf{Model:}                  &       OLS        & \textbf{  Adj. R-squared:    } &     0.068   \\
-\textbf{Method:}                 &  Least Squares   & \textbf{  F-statistic:       } &     9.914   \\
-\textbf{No. Observations:}       &        1108      & \textbf{  Prob (F-statistic):} &  1.00e-14   \\
-\textbf{Df Residuals:}           &        1098      & \textbf{  AIC:               } &    -419.0   \\
-\textbf{Df Model:}               &           9      & \textbf{  BIC:               } &    -368.9   \\
+\textbf{Dep. Variable:}          &  Pulse wave SNR  & \textbf{  R-squared:         } &     0.264   \\
+\textbf{Model:}                  &       OLS        & \textbf{  Adj. R-squared:    } &     0.257   \\
+\textbf{Method:}                 &  Least Squares   & \textbf{  F-statistic:       } &     39.27   \\
+\textbf{No. Observations:}       &        1108      & \textbf{  Prob (F-statistic):} &  2.40e-66   \\
+\textbf{Df Residuals:}           &        1097      & \textbf{  AIC:               } &     7118.   \\
+\textbf{Df Model:}               &          10      & \textbf{  BIC:               } &     7174.   \\
 \bottomrule
 \end{tabular}
 \begin{tabular}{lcccccc}
                                  & \textbf{coef} & \textbf{std err} & \textbf{t} & \textbf{P$> |$t$|$} & \textbf{[0.025} & \textbf{0.975]}  \\
 \midrule
-\textbf{intercept}               &       0.5320  &        0.035     &    15.257  &         0.000        &        0.464    &        0.600     \\
-\textbf{age}            			 &      -0.0014  &        0.000     &    -4.658  &         0.000        &       -0.002    &       -0.001     \\
-\textbf{illuminance\_var} 		 &       0.3539  &        0.136     &     2.594  &         0.010        &        0.086    &        0.622     \\
-\textbf{movement}       			 &       0.1967  &        0.106     &     1.855  &         0.064        &       -0.011    &        0.405     \\
-\textbf{gender\_male}   			 &       0.0098  &        0.012     &     0.803  &         0.422        &       -0.014    &        0.034     \\
-\textbf{skin\_type\_2}  			 &       0.0107  &        0.034     &     0.315  &         0.753        &       -0.056    &        0.078     \\
-\textbf{skin\_type\_3}  			 &      -0.0511  &        0.037     &    -1.390  &         0.165        &       -0.123    &        0.021     \\
-\textbf{skin\_type\_4}  			 &      -0.0565  &        0.039     &    -1.458  &         0.145        &       -0.132    &        0.020     \\
-\textbf{skin\_type\_5}  			 &       0.0164  &        0.038     &     0.433  &         0.665        &       -0.058    &        0.091     \\
-\textbf{skin\_type\_6}  			 &       0.1486  &        0.041     &     3.594  &         0.000        &        0.067    &        0.230     \\
+\textbf{intercept}               &       9.7449  &        1.575     &     6.189  &         0.000        &        6.655    &       12.834     \\
+\textbf{age}                     &       0.1135  &        0.010     &    11.919  &         0.000        &        0.095    &        0.132     \\
+\textbf{illuminance\_var}        &     -22.3650  &        4.096     &    -5.460  &         0.000        &      -30.403    &      -14.327     \\
+\textbf{movement}                &      -5.3373  &        3.179     &    -1.679  &         0.093        &      -11.576    &        0.901     \\
+\textbf{hr}                      &      -0.0283  &        0.014     &    -2.046  &         0.041        &       -0.055    &       -0.001     \\
+\textbf{gender\_male}            &       0.2530  &        0.377     &     0.672  &         0.502        &       -0.486    &        0.992     \\
+\textbf{skin\_type\_2}  			 &      -0.1885  &        1.024     &    -0.184  &         0.854        &       -2.199    &        1.822     \\
+\textbf{skin\_type\_3}  			 &       0.4203  &        1.104     &     0.381  &         0.703        &       -1.745    &        2.586     \\
+\textbf{skin\_type\_4}  			 &       1.4931  &        1.161     &     1.286  &         0.199        &       -0.785    &        3.772     \\
+\textbf{skin\_type\_5}  			 &      -2.6020  &        1.140     &    -2.282  &         0.023        &       -4.839    &       -0.365     \\
+\textbf{skin\_type\_6}  			 &      -7.9805  &        1.241     &    -6.429  &         0.000        &      -10.416    &       -5.545     \\
 \bottomrule
 \end{tabular}
 \end{center}
 \end{table}
 
-The regression for VV-Medium shows a significant result.
-Only \texttt{age}, \texttt{illuminance\_var}, and \texttt{skin\_type\_6} are shown to have significant effects at the 5\% level:
+For our regression analysis on the VV-Medium, we use all available factors.
+The regression equation is significant and explains 26.4\% of the variance of the pulse wave estimation SNR.
+\texttt{age}, \texttt{hr}, \texttt{illuminance\_var}, and \texttt{skin\_type\_x} are shown to have significant effects at the 5\% level:
 
 \begin{itemize}
-	\item \texttt{age} has a weak negative effect, meaning that estimations were slightly more accurate for older participants,
-	\item \texttt{illuminance\_var} had a moderate positive effect, meaning that higher variance in facial illumination of participants led to less accurate estimations, and
-	\item \texttt{skin\_type\_6} had a moderate positive effect, meaning that the error of heart rate estimation for participants with skin type 6 was on average ca. 0.15 bpm higher, taking into account the other factors.
+	\item \texttt{age} has a weak positive effect, meaning that estimations were slightly more accurate for older participants,
+	\item \texttt{hr} has a weak negative effect, meaning that estimations were slightly less accurate for participants with higher heart rates,
+	\item \texttt{illuminance\_var} had a strong negative effect, meaning that higher variance in facial illuminance of participants led to less accurate estimations, and
+	\item \texttt{skin\_type\_5} and especially \texttt{skin\_type\_6} had negative effects, meaning that pulse wave estimation for participants with skin types 5 and especially 6 was less accurate.
 \end{itemize}
 
-For VV-Medium, the factors are collectively able to explain a modest 7.5\% of the variance of the absolute errors in HR estimation.
+It is worth noting that \texttt{movement} did not have a significant effect, potentially because participants generally do not move much for this dataset.
 
 \begin{table}[h!]
 \begin{center}
-\caption{Regression analysis of factors affecting heart rate estimation on PROSIT test set}
+\caption{Regression analysis of factors affecting pulse wave estimation on PROSIT test set}
 \label{tab:vv-hr-regression-prosit}
 \begin{tabular}{lclc}
 \toprule
-\textbf{Dep. Variable:}          &  HR MAE          & \textbf{  R-squared:         } &     0.350   \\
-\textbf{Model:}                  &       OLS        & \textbf{  Adj. R-squared:    } &     0.346   \\
-\textbf{Method:}                 &  Least Squares   & \textbf{  F-statistic:       } &     93.64   \\
-\textbf{No. Observations:}       &        1403      & \textbf{  Prob (F-statistic):} & 1.58e-124   \\
-\textbf{Df Residuals:}           &        1394      & \textbf{  AIC:               } &    -231.2   \\
-\textbf{Df Model:}               &           8      & \textbf{  BIC:               } &    -184.0   \\
+\textbf{Dep. Variable:}          &  Pulse wave SNR  & \textbf{  R-squared:         } &     0.103   \\
+\textbf{Model:}                  &       OLS        & \textbf{  Adj. R-squared:    } &     0.102   \\
+\textbf{Method:}                 &  Least Squares   & \textbf{  F-statistic:       } &     53.82   \\
+\textbf{No. Observations:}       &        1403      & \textbf{  Prob (F-statistic):} &  6.40e-33   \\
+\textbf{Df Residuals:}           &        1399      & \textbf{  AIC:               } & 1.040e+04   \\
+\textbf{Df Model:}               &           3      & \textbf{  BIC:               } & 1.042e+04   \\
 \bottomrule
 \end{tabular}
 \begin{tabular}{lcccccc}
                                  & \textbf{coef} & \textbf{std err} & \textbf{t} & \textbf{P$> |$t$|$} & \textbf{[0.025} & \textbf{0.975]}  \\
 \midrule
-\textbf{intercept}               &       0.5039  &        0.028     &    17.823  &         0.000        &        0.448    &        0.559     \\
-\textbf{age}                     &      -0.0041  &        0.000     &    -9.169  &         0.000        &       -0.005    &       -0.003     \\
-\textbf{illuminance\_var}        &       0.6905  &        0.075     &     9.201  &         0.000        &        0.543    &        0.838     \\
-\textbf{movement}                &       0.3509  &        0.039     &     8.989  &         0.000        &        0.274    &        0.428     \\
-\textbf{camera\_stationary}      &      -0.1748  &        0.017     &   -10.056  &         0.000        &       -0.209    &       -0.141     \\
-\textbf{gender\_male}            &       0.1722  &        0.014     &    11.998  &         0.000        &        0.144    &        0.200     \\
-\textbf{skin\_type\_2}           &       0.1268  &        0.016     &     8.013  &         0.000        &        0.096    &        0.158     \\
-\textbf{skin\_type\_3}           &      -0.1226  &        0.058     &    -2.124  &         0.034        &       -0.236    &       -0.009     \\
-\textbf{skin\_type\_4}           &       0.3286  &        0.039     &     8.391  &         0.000        &        0.252    &        0.405     \\
+\textbf{intercept}               &       7.2056  &        0.669     &    10.775  &         0.000        &        5.894    &        8.517     \\
+\textbf{illuminance\_var} 		 &     -26.4655  &        3.216     &    -8.230  &         0.000        &      -32.774    &      -20.157     \\
+\textbf{movement}       			 &     -14.3836  &        1.687     &    -8.525  &         0.000        &      -17.693    &      -11.074     \\
+\textbf{camera\_stationary}   	 &       0.1855  &        0.597     &     0.311  &         0.756        &       -0.985    &        1.356     \\
 \bottomrule
 \end{tabular}
 \end{center}
 \end{table}
 
-Looking at the regression for the PROSIT test set, we find that it has much more explanatory power.
-Here, the regression itself and all considered factors appear to have significant effects at the 5\% level: 
+Since there are not many unique participants in the PROSIT test set, we only consider the behavioral and environmental factors for the next regression.
+Looking at the results, the regression equation itself as well as \texttt{illuminance\_var} and \texttt{movement} have significant effects at the 5\% level: 
 
 \begin{itemize}
-	\item \texttt{age} has a weak negative effect, same direction but stronger than the result on VV-Medium. This means that again, estimations were slightly more accurate for older participants.
-	\item \texttt{camera\_stationary} had a negative effect, meaning that estimations were better when the camera was stationary.
-	\item \texttt{gender\_male} has a moderately positive effect, meaning that estimations were worse for male participants.
-	\item \texttt{illuminance\_var} had a strong positive effect, meaning that estimations were worse with higher variance in facial illumination of participants.
-	\item \texttt{movement} had a positive effect, meaning that estimations were worse when participants moved more.
-	\item \texttt{skin\_type\_x}: Only skin types 1, 2, 3, and 4 were present in the PROSIT test set and the result is mixed, so there is no clear conclusion.
+	\item \texttt{illuminance\_var} has a strong negative effect, meaning that estimations became less accurate with higher variance in facial illuminance of participants.
+	\item \texttt{movement} has a negative effect, meaning that estimations were less accurate when participants moved more.
 \end{itemize}
 
-For PROSIT, the factors are collectively able to explain a respectable 35\% of the variance of the absolute errors in HR estimation.
+These behavioral factors are collectively able to explain 10.3\% of the variance of the pulse wave estimation SNR.
+It is worth noting that \texttt{camera\_stationary} did not have a significant effect, which indicates that our rPPG model has some degree of robustness against camera movement.
 
-These results confirm that both participant movement and variation in the illumination of the participant's face have a negative impact on estimation performance.
-However, we note that these effects are contained to less than 1 bpm from the best to worst values of the respective factors.
-Secondly, it is interesting to note that at least for these datasets and the our estimation model, the effect of illumination variation seems to have a greater impact than participant movement.
-Additionally, we observe that estimation performance appears to be better for female participants.
-On the one hand, this may be influenced by bearded male participants, which we don't control for -- however, on the other hand, we also don't control for use of make-up by female participants.
+Overall, the results confirm that the behavioral factors of participant movement and variation in the illuminance of the participant's face dominate the results with have a significant negative impact on estimation performance.
+It is interesting to note that at least for these datasets, the effect of illuminance variation seems to have a greater impact than participant movement.
+Our model performance appears to be slightly impacted by the heart rate itself.
+We also confirm previous findings that rPPG models can struggle with darker skin types, but cannot confirm findings that estimation is more accurate for females \cite{nowara2020meta}.
+Additionally, we observe that estimation appears to be more accurate for older participants.
 
-Based on these results, we advise users of VitalLens that for best performance they should (i) hold still and place the device on a surface, and (ii) make sure the face is evenly illuminated.
+\subsubsection{Respiration wave}
 
-\subsection{Which factors impact respiratory rate estimation performance?}
+For our analysis of the impact on respiration wave estimation, we conduct another two OLS regressions.
+The results are reported in Table \ref{tab:vv-rr-regression-vv} and \ref{tab:vv-rr-regression-prosit}.
 
-For our analysis of the impact on respiratory rate estimation, we consider the factors \texttt{age}, \texttt{camera\_stationary}, \texttt{gender\_male}, \texttt{illuminance\_var}, and \texttt{movement}.
-We conduct another OLS regressions on the PROSIT test set using these factors to predict the respiratory rate estimation MAE - the results are reported in Table \ref{tab:vv-rr-regression-prosit}.
+\begin{table}[h!]
+\begin{center}
+\caption{Regression analysis of factors affecting respiratory rate estimation on VV-Medium}
+\label{tab:vv-rr-regression-vv}
+\begin{tabular}{lclc}
+\toprule
+\textbf{Dep. Variable:}          &  Resp wave SNR   & \textbf{  R-squared:         } &     0.071   \\
+\textbf{Model:}                  &       OLS        & \textbf{  Adj. R-squared:    } &     0.062   \\
+\textbf{Method:}                 &  Least Squares   & \textbf{  F-statistic:       } &     8.340   \\
+\textbf{No. Observations:}       &        1108      & \textbf{  Prob (F-statistic):} &  3.71e-13   \\
+\textbf{Df Residuals:}           &        1097      & \textbf{  AIC:               } &     7352.   \\
+\textbf{Df Model:}               &          10      & \textbf{  BIC:               } &     7407.   \\
+\bottomrule
+\end{tabular}
+\begin{tabular}{lcccccc}
+                                 & \textbf{coef} & \textbf{std err} & \textbf{t} & \textbf{P$> |$t$|$} & \textbf{[0.025} & \textbf{0.975]}  \\
+\midrule
+\textbf{intercept}               &       8.6117  &        1.349     &     6.385  &         0.000        &        5.965    &       11.258     \\
+\textbf{age}            			 &       0.0674  &        0.010     &     6.559  &         0.000        &        0.047    &        0.088     \\
+\textbf{illuminance\_var} 		 &      -4.6049  &        4.564     &    -1.009  &         0.313        &      -13.560    &        4.350     \\
+\textbf{movement}       			 &     -13.8675  &        3.536     &    -3.922  &         0.000        &      -20.805    &       -6.930     \\
+\textbf{rr}          			 &      -0.1615  &        0.040     &    -4.056  &         0.000        &       -0.240    &       -0.083     \\
+\textbf{gender\_male}   			 &       0.7883  &        0.407     &     1.939  &         0.053        &       -0.009    &        1.586     \\
+\textbf{skin\_type\_2}  			 &      -0.8223  &        1.139     &    -0.722  &         0.470        &       -3.057    &        1.413     \\
+\textbf{skin\_type\_3}  			 &      -0.5369  &        1.230     &    -0.437  &         0.663        &       -2.950    &        1.876     \\
+\textbf{skin\_type\_4}  			 &       0.1492  &        1.296     &     0.115  &         0.908        &       -2.395    &        2.693     \\
+\textbf{skin\_type\_5}  			 &       1.1431  &        1.269     &     0.901  &         0.368        &       -1.346    &        3.632     \\
+\textbf{skin\_type\_6}  			 &      -0.3998  &        1.383     &    -0.289  &         0.773        &       -3.114    &        2.314     \\
+\bottomrule
+\end{tabular}
+\end{center}
+\end{table}
+
+For our regression analysis on VV-Medium, we use all available factors.
+The regression equation is significant but explains only 7.1\% of the variance of the respiratory wave estimation SNR.
+\texttt{age}, \texttt{movement}, and \texttt{rr} are shown to have significant effects at the 5\% level:
+
+\begin{itemize}
+	\item \texttt{age} has a weak positive effect, meaning that estimations were slightly more accurate for older participants,
+	\item \texttt{movement} had a strong negative effect, meaning that higher participant movement led to less accurate estimations, and
+	\item \texttt{rr} has a weak negative effect, meaning that estimations were slightly less accurate for participants with higher respiratory rates.
+\end{itemize}
 
 \begin{table}[h!]
 \begin{center}
@@ -584,68 +660,440 @@ We conduct another OLS regressions on the PROSIT test set using these factors to
 \label{tab:vv-rr-regression-prosit}
 \begin{tabular}{lclc}
 \toprule
-\textbf{Dep. Variable:}          &  resp\_mae\_vl   & \textbf{  R-squared:         } &     0.126   \\
-\textbf{Model:}                  &       OLS        & \textbf{  Adj. R-squared:    } &     0.122   \\
-\textbf{Method:}                 &  Least Squares   & \textbf{  F-statistic:       } &     40.11   \\
-\textbf{No. Observations:}       &        1403      & \textbf{  Prob (F-statistic):} &  1.28e-38   \\
-\textbf{Df Residuals:}           &        1397      & \textbf{  AIC:               } &     396.3   \\
-\textbf{Df Model:}               &           5      & \textbf{  BIC:               } &     427.8   \\
+\textbf{Dep. Variable:}          &  Resp wave SNR   & \textbf{  R-squared:         } &     0.068   \\
+\textbf{Model:}                  &       OLS        & \textbf{  Adj. R-squared:    } &     0.066   \\
+\textbf{Method:}                 &  Least Squares   & \textbf{  F-statistic:       } &     33.96   \\
+\textbf{No. Observations:}       &        1403      & \textbf{  Prob (F-statistic):} &  3.46e-21   \\
+\textbf{Df Residuals:}           &        1399      & \textbf{  AIC:               } &     9735.   \\
+\textbf{Df Model:}               &           3      & \textbf{  BIC:               } &     9756.   \\
 \bottomrule
 \end{tabular}
 \begin{tabular}{lcccccc}
                                  & \textbf{coef} & \textbf{std err} & \textbf{t} & \textbf{P$> |$t$|$} & \textbf{[0.025} & \textbf{0.975]}  \\
 \midrule
-\textbf{intercept}               &       0.7648  &        0.031     &    24.842  &         0.000        &        0.704    &        0.825     \\
-\textbf{age}                     &      -0.0025  &        0.001     &    -4.849  &         0.000        &       -0.004    &       -0.001     \\
-\textbf{illuminance\_var}        &       0.5166  &        0.091     &     5.682  &         0.000        &        0.338    &        0.695     \\
-\textbf{movement}                &       0.5376  &        0.048     &    11.210  &         0.000        &        0.444    &        0.632     \\
-\textbf{camera\_stationary}      &      -0.0351  &        0.020     &    -1.731  &         0.084        &       -0.075    &        0.005     \\
-\textbf{gender\_male}            &      -0.0076  &        0.016     &    -0.481  &         0.630        &       -0.039    &        0.023     \\
+\textbf{intercept}               &       2.4654  &        0.527     &     4.676  &         0.000        &        1.431    &        3.500     \\
+\textbf{illuminance\_var}  		 &     -11.0138  &        2.535     &    -4.344  &         0.000        &      -15.987    &       -6.040     \\
+\textbf{movement}                &     -11.9294  &        1.330     &    -8.968  &         0.000        &      -14.539    &       -9.320     \\
+\textbf{camera\_stationary}      &      -1.3251  &        0.471     &    -2.816  &         0.005        &       -2.248    &       -0.402     \\
 \bottomrule
 \end{tabular}
 \end{center}
 \end{table}
 
-The regression itself and all the factors \texttt{age}, \texttt{illuminance\_var}, and \texttt{movement} have significant effects at the 5\% level.
-Contrary to expectations, \texttt{camera\_stationary} does not have a significant effect, only significant at 8.5\%.
+For the regression on the PROSIT test set, we again focus on the behavioral and environmental factors.
+The regression itself and all considered factors have significant effects at the 5\% level:
 
 \begin{itemize}
-	\item \texttt{age} has a weak negative effect, indicating that estimations were slightly more accurate for older participants.
-	\item \texttt{illuminance\_var} had a positive effect, meaning that estimations were worse with higher variance in facial illumination of participants.
-	\item \texttt{movement} had a positive effect, meaning that estimations were worse when participants moved more.
+	\item \texttt{camera\_stationary} has a weak negative effect, meaning that estimations were slightly less accurate when camera was stationary,
+	\item \texttt{illuminance\_var} has a strong negative effect, meaning that estimations were less accurate when participant illuminance varied more, and
+	\item \texttt{movement} had a strong negative effect, meaning that higher participant movement led to less accurate estimations.
 \end{itemize}
 
-The factors are collectively able to explain 12.6\% of the variance of the absolute errors in RR estimation.
+The factors are collectively able to explain 6.8\% of the variance of the respiratory wave estimation SNR.
 As expected, participant movement degrades the estimation quality for the respiratory rate.
-It is surprising that variation in the illumination of the participant's face impacts the estimation to a similar degree, and that this effect is stronger and more significant than the stationarity of the camera.
+It is surprising that variation in the illuminance of the participant's face impacts the estimation to a similar degree.
+Also, the finding that estimations were more accurate when the camera was not stationary is counterintuitive.
+One possible explanation is that VitalLens learns to understand that for some participants, repetitive movement of the (handheld) camera actually reveals information about respiration.
 
-These results reinforce the advice given to users of VitalLens.
+Based on the results for both pulse and respiration, we advise users of VitalLens that for best performance they should (i) hold still, and (ii) make sure the face is evenly illuminated.
 
-\subsection{Impact of subject movement}
+\subsubsection{Impact of participant movement}
 
-Bar chart comparing G, CHROM, POS, DeepPhys, MTTS-CAN, VitalLens SNR or MAE estimating HR - vs subject movement on x axis.
-Bar chart comparing DeepPhys, MTTS-CAN, VitalLens SNR or MAE estimating RR - vs subject movement on x axis.
+\pgfplotstableread[col sep=comma]{data/impact_movement.csv}\datatable
 
-\subsection{Impact of illumination variation}
+\begin{figure}[h!]
+  \centering
+  \begin{tikzpicture}
+    \begin{axis}[
+        ylabel=SNR,
+        height=5cm,
+        width=.8\textwidth,
+        legend style={
+            at={(0.98,.96)},
+            anchor=north east,
+            legend columns=-1
+        },
+        ybar,
+        bar width=14.,
+        xtick=data,
+        xticklabels from table={\datatable}{bin},
+        xticklabel style={rotate=30, anchor=east, align=center, text width=3cm},
+    ]
+    \addplot+[
+    	red!60,
+        ybar,
+        error bars/.cd,
+        y dir=both,
+        y explicit,
+    ] table[x expr=\coordindex, y=pulse_snr_mean, y error plus=pulse_snr_sd] {\datatable};
+    \addlegendentry{Pulse};
+    \addplot+[
+        blue!60,
+        ybar,
+        error bars/.cd,
+        y dir=both,
+        y explicit,
+    ] table[x expr=\coordindex, y=resp_snr_mean, y error plus=resp_snr_sd] {\datatable};
+    \addlegendentry{Resp};
+    \end{axis}
+  \end{tikzpicture}
+  \caption{Signal-to-noise ratio for pulse and respiration on the PROSIT test set, grouped by different levels of participant movement.}
+  \label{fig:impact-movement}
+\end{figure}
 
-Bar chart comparing G, CHROM, POS, DeepPhys, MTTS-CAN, VitalLens SNR estimating HR - vs illumination variation on x axis.
+According to the regression analysis, increasing amounts of participant movement lead to worse estimation performances for both heart rate and respiratory rate.
+We explore this effect in Figure \ref{fig:impact-movement} by looking the average SNR for different buckets of participant movement on the PROSIT test set.
+It is evident that SNR values indeed decrease with increased movement.
+There appears to be a large drop-off especially going from chunks that have no movement to those that have a few movements.
 
-\subsection{Impact of subject skin type}
+\subsubsection{Impact of participant illuminance variation}
 
-Bar chart comparing G, CHROM, POS, DeepPhys, MTTS-CAN, VitalLens SNR estimating HR - vs subject skin type on x axis.
+\pgfplotstableread[col sep=comma]{data/impact_illuminance.csv}\datatable
 
-\subsection{Impact of subject age}
+\begin{figure}[h!]
+  \centering
+  \begin{tikzpicture}
+    \begin{axis}[
+        ylabel=SNR,
+        height=5cm,
+        width=.8\textwidth,
+        legend style={
+            at={(0.98,.96)},
+            anchor=north east,
+            legend columns=-1
+        },
+        ybar,
+        bar width=14.,
+        xtick=data,
+        xticklabels from table={\datatable}{bin},
+        xticklabel style={rotate=30, anchor=east, align=center, text width=3cm},
+    ]
+    \addplot+[
+    	red!60,
+        ybar,
+        error bars/.cd,
+        y dir=both,
+        y explicit,
+    ] table[x expr=\coordindex, y=pulse_snr_mean, y error plus=pulse_snr_sd] {\datatable};
+    \addlegendentry{Pulse};
+    \addplot+[
+        blue!60,
+        ybar,
+        error bars/.cd,
+        y dir=both,
+        y explicit,
+    ] table[x expr=\coordindex, y=resp_snr_mean, y error plus=resp_snr_sd] {\datatable};
+    \addlegendentry{Resp};
+    \end{axis}
+  \end{tikzpicture}
+  \caption{Signal-to-noise ratio for pulse and respiration on the PROSIT test set, grouped by different levels of participant illuminance variation.}
+  \label{fig:impact-illuminance}
+\end{figure}
 
-Bar chart comparing G, CHROM, POS, DeepPhys, MTTS-CAN, VitalLens SNR estimating HR - vs subject age on x axis.
+The regression analysis showed that increasing amounts of variation in participant illuminance also led to worse estimation performances for both heart rate and respiratory rate.
+We explore this effect in Figure \ref{fig:impact-illuminance} by looking at the average SNR for different buckets of variation in participant illuminance on the PROSIT test set.
+This figure reveals that especially when going from chunks with moderate illuminance variation to those with extreme illuminance variation, we see a large drop-off in estimation accuracy.
 
-\subsection{Impact of vitals}
+\subsubsection{Impact of participant age}
 
-Investigate whether predictions are worse for lower / higher HR
+\pgfplotstableread[col sep=comma]{data/impact_age.csv}\datatable
+
+\begin{figure}[h!]
+  \centering
+  \begin{tikzpicture}
+    \begin{axis}[
+        x tick label style={
+            /pgf/number format/1000 sep=},
+        ylabel=SNR,
+        height=5cm,
+        width=.8\textwidth,
+        legend style={
+            at={(0.02,.96)},
+            anchor=north west,
+            legend columns=-1
+        },
+        ymin=0,
+        ybar,
+        bar width=10.,
+        xtick=data,
+        xticklabels from table={\datatable}{bin},
+        xticklabel style={rotate=22.5, anchor=east},
+    ]
+    \addplot+[
+    	red!60,
+        ybar,
+        error bars/.cd,
+        y dir=both,
+        y explicit,
+    ] table[x expr=\coordindex, y=pulse_snr_mean, y error plus=pulse_snr_sd] {\datatable};
+    \addlegendentry{Pulse};
+    \addplot+[
+        blue!60,
+        ybar,
+        error bars/.cd,
+        y dir=both,
+        y explicit,
+    ] table[x expr=\coordindex, y=resp_snr_mean, y error plus=resp_snr_sd] {\datatable};
+    \addlegendentry{Resp};
+    \end{axis}
+  \end{tikzpicture}
+  \caption{Signal-to-noise ratio for pulse and respiration on VV-Medium, grouped by different participant ages.}
+  \label{fig:impact-age}
+\end{figure}
+
+Since the regression results indicated that VitalLens is slightly more accurate overall for older participants, we explore this effect in more detail as well.
+Figure \ref{fig:impact-age} indeed shows that especially for participants under 20 years of age, the SNR for both pulse and respiration is tends to be lower.
+
+\subsubsection{Impact of participant skin type}
+
+\pgfplotstableread[col sep=comma]{data/impact_skin_type.csv}\datatable
+
+\begin{figure}[h!]
+  \centering
+  \begin{tikzpicture}
+    \begin{axis}[
+        ylabel=SNR,
+        height=5cm,
+        width=.8\textwidth,
+        legend style={
+            at={(0.98,.96)},
+            anchor=north east,
+            legend columns=-1
+        },
+        ybar,
+        bar width=14.,
+        xtick=data,
+        xticklabels from table={\datatable}{bin},
+        xticklabel style={align=center, text width=3cm},
+    ]
+    \addplot+[
+    	red!60,
+        ybar,
+        error bars/.cd,
+        y dir=both,
+        y explicit,
+    ] table[x expr=\coordindex, y=pulse_snr_mean, y error plus=pulse_snr_sd] {\datatable};
+    \addlegendentry{Pulse};
+    \addplot+[
+        blue!60,
+        ybar,
+        error bars/.cd,
+        y dir=both,
+        y explicit,
+    ] table[x expr=\coordindex, y=resp_snr_mean, y error plus=resp_snr_sd] {\datatable};
+    \addlegendentry{Resp};
+    \end{axis}
+  \end{tikzpicture}
+  \caption{Signal-to-noise ratio for pulse and respiration on VV-Medium, grouped by different participant skin types.}
+  \label{fig:impact-skin-type}
+\end{figure}
+
+According to the regression analysis on VV-Medium, the pulse wave estimation had a lower accuracy especially for participants with skin type 6.
+Here, we seek to further explore this effect.
+We start by grouping the chunks in VV-Medium by skin type and then plot the average estimation SNR for both pulse wave and respiration wave estimation in Figure \ref{fig:impact-skin-type}.
+Indeed, we observe that consistent with our previous regression analysis, there is a drop-off in the SNR between skin type 5 and 6 for pulse, while there is no obvious effect visible for respiration.
+
+\pgfplotstableread[col sep=comma]{data/impact_skin_type_comparison.csv}\datatable
+
+\begin{figure}[h!]
+  \centering
+  \begin{tikzpicture}
+    \begin{axis}[
+        ylabel=SNR,
+        height=5cm,
+        width=.8\textwidth,
+        legend style={
+            at={(0.98,.96)},
+            anchor=north east,
+            legend columns=-1
+        },
+        ybar,
+        bar width=14.,
+        xtick=data,
+        xticklabels from table={\datatable}{bin},
+        xticklabel style={align=center, text width=3cm},
+    ]
+    \addplot+[
+    	red!60,
+        ybar,
+        error bars/.cd,
+        y dir=both,
+        y explicit,
+    ] table[x expr=\coordindex, y=pulse_snr_mean_vl, y error plus=pulse_snr_sd_vl] {\datatable};
+    \addlegendentry{VitalLens};
+    \addplot+[
+        green!60,
+        ybar,
+        error bars/.cd,
+        y dir=both,
+        y explicit,
+    ] table[x expr=\coordindex, y=pulse_snr_mean_vl_64, y error plus=pulse_snr_sd_vl_64] {\datatable};
+    \addlegendentry{VitalLens*};
+    \end{axis}
+  \end{tikzpicture}
+  \caption{Comparing signal-to-noise ratio between VitalLens and VitalLens* on VV-Medium, grouped by participant skin types. VitalLens* was solely trained on PROSIT, while VitalLens* was trained on both PROSIT and VV-Ghana-Small.}
+  \label{fig:impact-skin-type-comparison}
+\end{figure}
+
+Next, we want to investigate to what degree the inclusion of VV-Ghana-Small in our training data lessened this skin type effect.
+For this purpose, we compare VitalLens with \textit{VitalLens*}, a version of VitalLens that is solely trained on the PROSIT test set.
+The training set of PROSIT by itself only includes 2 individuals of skin type 6, a number that is massively increased in the combined training data.
+Both VitalLens and VitalLens* are then evaluated on VV-Medium.
+Figure \ref{fig:impact-skin-type-comparison} compares the results, again grouped by skin type.
+It is evident that the addition of VV-Ghana-Small led to a sizeable improvement mainly for skin types 5 and 6, but also skin types 3 and 4.
+
+\begin{figure}[h!]
+  \centering
+  \begin{tikzpicture}
+    \begin{axis}[
+        ylabel=SNR,
+        height=5cm,
+        width=.8\textwidth,
+        legend style={
+            at={(0.98,.96)},
+            anchor=north east,
+            legend columns=-1
+        },
+        ybar,
+        bar width=14.,
+        xtick=data,
+        xticklabels from table={\datatable}{bin},
+        xticklabel style={align=center, text width=3cm},
+    ]
+    \addplot+[
+    	red!60,
+        ybar,
+        error bars/.cd,
+        y dir=both,
+        y explicit,
+    ] table[x expr=\coordindex, y=pulse_snr_mean_vl, y error plus=pulse_snr_sd_vl] {\datatable};
+    \addlegendentry{VitalLens};
+    \addplot+[
+        green!60,
+        ybar,
+        error bars/.cd,
+        y dir=both,
+        y explicit,
+    ] table[x expr=\coordindex, y=pulse_snr_mean_pos, y error plus=pulse_snr_sd_pos] {\datatable};
+    \addlegendentry{POS};
+    \end{axis}
+  \end{tikzpicture}
+  \caption{Comparing signal-to-noise ratio between VitalLens and POS on VV-Medium, grouped by participant skin types.}
+  \label{fig:impact-skin-type-comparison-pos}
+\end{figure}
+
+Finally, we compare the impact of skin types on pulse wave estimation between our learned model VitalLens and the best-performing handcrafted model POS.
+As visible in Figure \ref{fig:impact-skin-type-comparison-pos}, the impact of skin types in POS is even worse than on VitalLens*, with an even larger drop-off in SNR between skin types 5 and 6.
+
+We can conclude from this analysis that issues arising from the lower pulse signal strength in rPPG for darker skin types can at least partially be overcome by learning-based rPPG models which use training data that actually includes a significant amount of individuals with those skin types.
+
+\subsubsection{Impact of participant vitals}
+
+Finally, we investigate the impact of the vitals themselves on estimation performance.
+Although we took steps to prevent this, the distribution of vitals in the training set may have biased VitalLens towards predicting the average values found in the training set.
+The regressions found that estimations generally became slightly less accurate for individuals with higher heart rates and respiratory rates.
+Figures \ref{fig:impact-hr} and \ref{fig:impact-rr} show the SNR for pulse and respiration estimation, grouped by different heart rate and respiratory rates respectively.
+
+\pgfplotstableread[col sep=comma]{data/impact_hr.csv}\datatable
+
+\begin{figure}[h!]
+  \centering
+  \begin{tikzpicture}
+    \begin{axis}[
+        x tick label style={
+            /pgf/number format/1000 sep=},
+        ylabel=SNR,
+        height=5cm,
+        width=.8\textwidth,
+        legend style={
+            at={(0.02,.96)},
+            anchor=north west,
+            legend columns=-1
+        },
+        ybar,
+        bar width=12.,
+        xtick=data,
+        xticklabels from table={\datatable}{bin},
+        xticklabel style={rotate=22.5, anchor=east},
+    ]
+    \addplot+[
+    	red!60,
+        ybar,
+        error bars/.cd,
+        y dir=both,
+        y explicit,
+    ] table[x expr=\coordindex, y=pulse_snr_mean, y error plus=pulse_snr_sd] {\datatable};
+    \addlegendentry{Pulse};
+    \addplot+[
+        blue!60,
+        ybar,
+        error bars/.cd,
+        y dir=both,
+        y explicit,
+    ] table[x expr=\coordindex, y=resp_snr_mean, y error plus=resp_snr_sd] {\datatable};
+    \addlegendentry{Resp};
+    \end{axis}
+  \end{tikzpicture}
+  \caption{Signal-to-noise ratio for pulse and respiration on VV-Medium, grouped by different participant heart rate values.}
+  \label{fig:impact-hr}
+\end{figure}
+
+\pgfplotstableread[col sep=comma]{data/impact_rr.csv}\datatable
+
+\begin{figure}[h!]
+  \centering
+  \begin{tikzpicture}
+    \begin{axis}[
+        x tick label style={
+            /pgf/number format/1000 sep=},
+        ylabel=SNR,
+        height=5cm,
+        width=.8\textwidth,
+        legend style={
+            at={(0.02,.96)},
+            anchor=north west,
+            legend columns=-1
+        },
+        ybar,
+        bar width=14.,
+        xtick=data,
+        xticklabels from table={\datatable}{bin},
+        xticklabel style={rotate=22.5, anchor=east},
+    ]
+    \addplot+[
+    	red!60,
+        ybar,
+        error bars/.cd,
+        y dir=both,
+        y explicit,
+    ] table[x expr=\coordindex, y=pulse_snr_mean, y error plus=pulse_snr_sd] {\datatable};
+    \addlegendentry{Pulse};
+    \addplot+[
+        blue!60,
+        ybar,
+        error bars/.cd,
+        y dir=both,
+        y explicit,
+    ] table[x expr=\coordindex, y=resp_snr_mean, y error plus=resp_snr_sd] {\datatable};
+    \addlegendentry{Resp};
+    \end{axis}
+  \end{tikzpicture}
+  \caption{Signal-to-noise ratio for pulse and respiration on VV-Medium, grouped by different participant respiratory rate values.}
+  \label{fig:impact-rr}
+\end{figure}
+
+The figures show that generally, VitalLens does not appear to be biased by the distributions of heart rate and respiratory rate in the training data.
+We do however note that pulse estimation became less accurate for the chunks with the highest heart rates, and respiration estimation became less accurate for the chunks with the highest respiration rates.
+This consistent with the findings of the regression analysis.
 
 \section{Conclusion}
 \label{sec:conclusion}
 
-Authors may wish to optionally include extra information (complete proofs, additional experiments and plots) in the appendix. All such materials should be part of the supplemental material (submitted separately) and should NOT be included in the main submission.
+VitalLens emerges as a novel solution in the domain of rPPG, showcasing its potential for accurate and real-time estimation of vital signs from selfie videos.
+The extensive evaluation establishes its superiority over established methods, such as G, CHROM, POS, DeepPhys, and MTTS-CAN.
+Notably, VitalLens outperforms these methods while maintaining fast inference times.
+The thorough analysis of factors impacting performance reveals the significance of participant movement and illuminance variation, providing valuable insights for optimal usage.
+Additionally, the inclusion of diverse training data to address skin type bias, contributes to the model's robustness.
 
 \section*{References}
 
