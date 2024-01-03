@@ -167,15 +167,15 @@ raw_pos_vv = raw_pos_vv[['chunk_id', 'pred_hr', 'pred_rr', 'conf_pulse_mean', 'c
 raw_pos_vv = raw_pos_vv.rename(columns={'chunk_id': 'id'})
 results_vv = merge_force_suffix(results_vv, raw_pos_vv, on='id', how='inner', suffixes=['', '_pos'])
 raw_deep_phys_vv = pd.read_csv("raw_data/evaluate_deep_phys_vv.csv")
-raw_deep_phys_vv = raw_deep_phys_vv[['chunk_id', 'gt_hr_pox', 'gt_rr', 'pred_hr', 'pred_rr', 'conf_pulse_mean', 'conf_resp_mean', 'pulse_mae', 'pulse_mse', 'pulse_rmse', 'pulse_cor', 'pulse_snr', 'hr_ae', 'resp_mae', 'resp_mse', 'resp_rmse', 'resp_cor', 'resp_snr', 'rr_ae', 'live_error', 'live_error_t']]
+raw_deep_phys_vv = raw_deep_phys_vv[['chunk_id', 'pred_hr', 'pred_rr', 'conf_pulse_mean', 'conf_resp_mean', 'pulse_mae', 'pulse_mse', 'pulse_rmse', 'pulse_cor', 'pulse_snr', 'hr_ae', 'resp_mae', 'resp_mse', 'resp_rmse', 'resp_cor', 'resp_snr', 'rr_ae', 'live_error', 'live_error_t']]
 raw_deep_phys_vv = raw_deep_phys_vv.rename(columns={'chunk_id': 'id'})
 results_vv = merge_force_suffix(results_vv, raw_deep_phys_vv, on='id', how='inner', suffixes=['', '_deepphys'])
 raw_mtts_can_vv = pd.read_csv("raw_data/evaluate_mtts_can_vv_8.csv")
-raw_mtts_can_vv = raw_mtts_can_vv[['chunk_id', 'gt_hr_pox', 'gt_rr', 'pred_hr', 'pred_rr', 'conf_pulse_mean', 'conf_resp_mean', 'pulse_mae', 'pulse_mse', 'pulse_rmse', 'pulse_cor', 'pulse_snr', 'hr_ae', 'resp_mae', 'resp_mse', 'resp_rmse', 'resp_cor', 'resp_snr', 'rr_ae', 'live_error', 'live_error_t']]
+raw_mtts_can_vv = raw_mtts_can_vv[['chunk_id', 'pred_hr', 'pred_rr', 'conf_pulse_mean', 'conf_resp_mean', 'pulse_mae', 'pulse_mse', 'pulse_rmse', 'pulse_cor', 'pulse_snr', 'hr_ae', 'resp_mae', 'resp_mse', 'resp_rmse', 'resp_cor', 'resp_snr', 'rr_ae', 'live_error', 'live_error_t']]
 raw_mtts_can_vv = raw_mtts_can_vv.rename(columns={'chunk_id': 'id'})
 results_vv = merge_force_suffix(results_vv, raw_mtts_can_vv, on='id', how='inner', suffixes=['', '_mtts'])
 raw_plethnet_64_vv = pd.read_csv("raw_data/evaluate_plethnet_v2_64_vv.csv")
-raw_plethnet_64_vv = raw_plethnet_64_vv[['chunk_id', 'gt_hr_pox', 'gt_rr', 'pred_hr', 'pred_rr', 'conf_pulse_mean', 'conf_resp_mean', 'pulse_mae', 'pulse_mse', 'pulse_rmse', 'pulse_cor', 'pulse_snr', 'hr_ae', 'resp_mae', 'resp_mse', 'resp_rmse', 'resp_cor', 'resp_snr', 'rr_ae', 'live_error', 'live_error_t']]
+raw_plethnet_64_vv = raw_plethnet_64_vv[['chunk_id', 'pred_hr', 'pred_rr', 'conf_pulse_mean', 'conf_resp_mean', 'pulse_mae', 'pulse_mse', 'pulse_rmse', 'pulse_cor', 'pulse_snr', 'hr_ae', 'resp_mae', 'resp_mse', 'resp_rmse', 'resp_cor', 'resp_snr', 'rr_ae', 'live_error', 'live_error_t']]
 raw_plethnet_64_vv = raw_plethnet_64_vv.rename(columns={'chunk_id': 'id'})
 results_vv = merge_force_suffix(results_vv, raw_plethnet_64_vv, on='id', how='inner', suffixes=['', '_vl_64'])
 
@@ -373,3 +373,16 @@ impact_rr.to_csv("data/impact_rr.csv", index=False)
 correlation_matrix = chunks_prosit[['frame_avg_hr_pox', 'subject_movement', 'subject_illuminance_d', 'subject_age']].corr()
 print("Correlation Matrix:")
 print(correlation_matrix)
+
+# == Scatterplots ==
+
+## hr VV-Medium
+results_vv_medium = results_vv[~results_vv['session_description'].str.contains('ghana')]
+results_vv_medium_scatter = pd.DataFrame({
+  'hr_est': results_vv_medium['pred_hr_vl'],
+  'hr_true': results_vv_medium['gt_hr_pox_vl'],
+  'rr_est': results_vv_medium['pred_rr_vl'],
+  'rr_true': results_vv_medium['gt_rr_vl'],
+}).fillna(0)
+results_vv_medium_scatter.to_csv("data/results_vv_medium_scatter.csv", index=False)
+

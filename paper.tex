@@ -59,7 +59,7 @@ This report introduces VitalLens, an app that estimates vital signs such as hear
 VitalLens uses a computer vision model trained on a diverse dataset of video and physiological sensor data.
 We benchmark performance on several diverse datasets, including VV-Medium, which consists of \sisetup{round-mode=places,round-precision=0}\num{\totalparticipantsvvmedium} unique participants.
 VitalLens outperforms several existing methods including POS and MTTS-CAN on all datasets while maintaining a fast inference speed.
-On VV-Medium, VitalLens achieves absolute errors of 0.71 bpm for heart rate estimation, and 0.76 rpm for respiratory rate estimation.
+On VV-Medium, VitalLens achieves mean absolute errors of 0.71 bpm for heart rate estimation, and 0.76 bpm for respiratory rate estimation.
 \end{abstract}
 
 
@@ -81,17 +81,27 @@ Our key contributions are:
 
 \begin{itemize}
 	\item \textbf{Real-time rPPG application.} We introduce VitalLens -- the first widely distributed rPPG application for real time estimation of vitals such as of heart rate and respiratory rate.\footnote{VitalLens is currently in private beta test and/or under review by Apple. This will be updated with a public App Store link once available.} 
-	\item \textbf{Comprehensive evaluation on a large dataset.} We evaluate the performance of VitalLens on multiple datasets, including the large VV-Medium \cite{toye2023vital} with \sisetup{round-mode=places,round-precision=0}\num{\totalparticipantsvvmedium} participants. VitalLens outperforms G, CHROM, POS, DeepPhys, and MTTS-CAN in terms of estimation accuracy. On VV-Medium, VitalLens achieves absolute errors of 0.71 bpm for heart rate estimation, and 0.76 rpm for respiratory rate estimation, while taking 18 ms to run inference.
+	\item \textbf{Comprehensive evaluation on a large dataset.} We evaluate the performance of VitalLens on multiple datasets, including VV-Medium \cite{toye2023vital} with \sisetup{round-mode=places,round-precision=0}\num{\totalparticipantsvvmedium} participants. VitalLens outperforms G, CHROM, POS, DeepPhys, and MTTS-CAN in terms of estimation accuracy. On VV-Medium, VitalLens achieves mean absolute errors of 0.71 bpm for heart rate estimation, and 0.76 bpm for respiratory rate estimation, while taking 18 ms to run inference.
 	\item \textbf{Analysis of factors impacting performance.} We systematically investigate factors impacting estimation performance. We find that \textit{participant movement} and \textit{variation of participant illuminance} are the main factors impacting performance. Compared to approaches like POS, VitalLens is less impacted by darker skin types when estimating heart rates. 
 	\item \textbf{Maintaining end-user privacy}. VitalLens runs inference locally, meaning that video and vitals never leave the device.
 \end{itemize}
 
-\section{Model Architecture}
-\label{sec:scope}
+\section{Architecture}
+\label{sec:architecture}
+
+VitalLens takes a series of video frames as inputs, and uses them to estimate the pulse waveform and the respiration waveform.
+The corresponding heart rate (HR) and respiratory rate (RR) estimates are derived from these waveforms using Fast Fourier Transform (FFT).
+Please refer to Figure \ref{fig:overview} for a broad overview of how VitalLens operates, along with the evaluation method used in Section \ref{sec:results}.
+
+\begin{figure}[h!]
+	\centering
+ 	\includegraphics[width=\textwidth]{figures/overview.pdf}
+ 	\caption{VitalLens estimates vital sign waveforms from video frames. The app displays the video feed with an overlay of the estimated pulse and respiration waveforms as well as the derived heart rate and respiration rate. We report evaluation metrics for all displayed quantities by comparing the estimations with gold-standard labels.}
+ 	\label{fig:overview}
+\end{figure}
 
 The estimation engine built into VitalLens (henceforth ``VitalLens'') is a computer vision model trained on a diverse dataset of video and gold-standard ground truth physiological data.
 The model architecture is broadly based on the \textit{EfficientNetV2} \cite{tan2021efficient} model family, enhanced with several improvements in architecture and model optimization to enable efficient training and inference in the rPPG domain.
-
 This report does not contain any further detail about the architecture of the model or training methodology - we reserve this for future publication.
 
 \section{Datasets}
@@ -153,7 +163,7 @@ Both camera and participants are stationary in this dataset.
 
 We pre-process VV-Medium using the same steps applied to PROSIT.
 As part of this step, we create small chunks, calculate summary vitals, and extract further metadata.
-Note that for most chunks, the missing respiratory signal was synthetically created.\footnote{This was done using an earlier version of our model trained on PROSIT. We then manually verified the correctness by visual inspection of both the label and video, and discarded bad labels.}
+Note that for most chunks, the missing respiratory signal was synthetically created.\footnote{This was done using an earlier version of our model trained on PROSIT. We then manually verified the correctness by visual inspection of both the label and video.}
 
 \begin{table}[h!]
  	\caption{VV-Medium Dataset Size}
@@ -349,7 +359,7 @@ There are several participants who have an irregular heartbeat.
             		table/col sep=comma,
             		ybar,
             		ylabel=Frequency,
-            		xlabel={Respiratory rate [rpm]},
+            		xlabel={Respiratory rate [bpm]},
             		xmin=-2,
             		xmax=40,
             		width=\textwidth,
@@ -411,9 +421,16 @@ Finally, we analyze the influence of the factors of interest in more detail.
 \subsection{Vitals estimation}
 
 Vitals estimation is performed separately for each chunk at 30 frames per second for all compared methods.
-We use the dataset labels and model estimations to calculate several evaluation metrics for each chunk:
-Mean absolute error (MAE, smaller is better), signal-to-noise ratio (SNR, larger is better), and pearson correlation coefficient ($r$, larger is better).
-We then report the mean for each of these metrics across all chunks.
+As shown in Figure \ref{fig:overview}, we use the dataset labels and model estimations to calculate several evaluation metrics for each chunk:
+
+\begin{itemize}
+	\item \textbf{Absolute error} (AE, smaller is better): Used to measure the absolute difference between the estimated rate and the true rate.
+	\item \textbf{Signal-to-noise ratio} (SNR, larger is better): Measures the ratio of the true rate signal to the noise present in the estimated waveform in decibels.
+	\item \textbf{Pearson correlation coefficient} ($r$, larger is better): Measures the the linear correlation between the estimated waveform and the true waveform.
+\end{itemize}
+
+We then report the mean for each of these metrics across all chunks in the given dataset.
+As is common, we denote the mean AE as MAE as is common, but continue to use the abbreviations SNR and $r$ when reporting the mean SNR and mean $r$.
 
 \newcommand{\printMetric}[1]{%
   \ifthenelse{\equal{#1}{0.0}}%
@@ -428,7 +445,7 @@ We then report the mean for each of these metrics across all chunks.
  	\begin{threeparttable}	
   	\csvreader[
 		tabular=lccccccc,
-    	table head=\toprule Method & \multicolumn{1}{c}{Heart rate} & \multicolumn{2}{c}{Pulse wave} & \multicolumn{1}{c}{Respiratory rate\tnote{a}} & \multicolumn{2}{c}{Respiration wave\tnote{a}} & Inference \\ & MAE $\downarrow$ & SNR $\uparrow$ & $r \uparrow$ & MAE $\downarrow$ & SNR $\uparrow$ & $r \uparrow$ & speed in ms\tnote{b} \\ \midrule,
+    	table head=\toprule Method & \multicolumn{1}{c}{Heart rate} & \multicolumn{2}{c}{Pulse wave} & \multicolumn{1}{c}{Respiratory rate\tnote{a}} & \multicolumn{2}{c}{Respiration wave\tnote{a}} & Inference \\ & MAE $\downarrow$ & SNR $\uparrow$ & $r \uparrow$ & MAE $\downarrow$ & SNR $\uparrow$ & $r \uparrow$ & time in ms\tnote{b} \\ \midrule,
     	table foot=\bottomrule,
     	late after line=\\,
     	before reading={\catcode`\%=12}, after reading={\catcode`\%=14}
@@ -442,8 +459,50 @@ We then report the mean for each of these metrics across all chunks.
 \end{table}
 
 Results for VV-Medium are reported in Table \ref{tab:results-vv-medium}.
-The heart rate and respiratory rate estimated by VitalLens across all chunks was off by 0.71 bpm and 0.76 rpm on average from the gold-standard labels, while taking 18 ms for inference.
-VitalLens beats all other listed methods for all considered evaluation metrics, while maintaining a competitive inference speed that is sufficient to run in real time at 30 fps.\footnote{The inference speeds are for a single video frame, excluding face detection but including all other computation, such as resizing. We measure the inference speeds using our own implementations as an average across 1,000 iterations on a workstation with Nvidia GeForce RTX 3080 and AMD Ryzen 7 3700X.}
+The heart rate and respiratory rate estimated by VitalLens across all chunks was off by 0.71 bpm and 0.76 bpm on average from the gold-standard labels, while taking 18 ms for inference.
+
+\begin{figure}[h!]
+  \centering
+  \begin{subfigure}{0.48\textwidth}
+    \begin{tikzpicture}
+      \begin{axis}[
+          xlabel=Gold-standard heart rate,
+          ylabel=Estimated heart rate,
+          height=7cm,
+          width=\textwidth,
+      ]
+      \addplot[
+          only marks,
+          mark=o,
+          color=red,
+      ] table [col sep=comma, x=hr_true, y=hr_est] {data/results_vv_medium_scatter.csv};
+      \addplot [gray,line width=0.2, domain=35:130, samples=2] {x};
+      \end{axis}
+    \end{tikzpicture}
+  \end{subfigure}
+  \hfill
+  \begin{subfigure}{0.48\textwidth}
+    \begin{tikzpicture}
+      \begin{axis}[
+          xlabel=Gold-standard respiratory rate,
+          ylabel=Estimated respiratory rate,
+          height=7cm,
+          width=\textwidth,
+      ]
+      \addplot[
+          only marks,
+          mark=o,
+          color=blue,
+      ] table [col sep=comma, x=rr_est, y=rr_true] {data/results_vv_medium_scatter.csv};
+      \addplot [gray,line width=0.2, domain=4:44, samples=2] {x};
+      \end{axis}
+    \end{tikzpicture}
+  \end{subfigure}
+  \caption{VitalLens estimated vitals vs. gold-standard true vitals on VV-Medium. Besides a few outliers, estimations closely match the true vitals.}
+  \label{fig:two_scatterplots}
+\end{figure}
+
+VitalLens beats all other listed methods for all considered evaluation metrics, while maintaining a competitive inference speed that is sufficient to run in real time at 30 fps.\footnote{The inference times are for a single video frame, excluding face detection but including all other computation, such as resizing. We measure these times using our own implementations as an average across 1,000 iterations on a workstation with Nvidia GeForce RTX 3080 and AMD Ryzen 7 3700X.}
 The next best predictions for heart rate and respiratory rate also came from learning-based models MTTS-CAN and DeepPhys, respectively.
 Note that this dataset has a large variety of participants and their demographics, but low amounts of participant and camera movement.
 
@@ -708,8 +767,8 @@ Based on the results for both pulse and respiration, we advise users of VitalLen
         height=5cm,
         width=.8\textwidth,
         legend style={
-            at={(0.98,.96)},
-            anchor=north east,
+            at={(0.014,.04)},
+            anchor=south west,
             legend columns=-1
         },
         ybar,
@@ -718,13 +777,14 @@ Based on the results for both pulse and respiration, we advise users of VitalLen
         xticklabels from table={\datatable}{bin},
         xticklabel style={rotate=30, anchor=east, align=center, text width=3cm},
     ]
+    \draw[gray, line width=0.2] ({rel axis cs:0,0}|-{axis cs:0,0}) -- ({rel axis cs:1,0}|-{axis cs:0,0});
     \addplot+[
     	red!60,
         ybar,
         error bars/.cd,
         y dir=both,
         y explicit,
-    ] table[x expr=\coordindex, y=pulse_snr_mean, y error plus=pulse_snr_sd] {\datatable};
+    ] table[x expr=\coordindex, y=pulse_snr_mean, y error=pulse_snr_sd] {\datatable};
     \addlegendentry{Pulse};
     \addplot+[
         blue!60,
@@ -732,7 +792,7 @@ Based on the results for both pulse and respiration, we advise users of VitalLen
         error bars/.cd,
         y dir=both,
         y explicit,
-    ] table[x expr=\coordindex, y=resp_snr_mean, y error plus=resp_snr_sd] {\datatable};
+    ] table[x expr=\coordindex, y=resp_snr_mean, y error=resp_snr_sd] {\datatable};
     \addlegendentry{Resp};
     \end{axis}
   \end{tikzpicture}
@@ -757,8 +817,8 @@ There appears to be a large drop-off especially going from chunks that have no m
         height=5cm,
         width=.8\textwidth,
         legend style={
-            at={(0.98,.96)},
-            anchor=north east,
+            at={(0.014,.04)},
+            anchor=south west,
             legend columns=-1
         },
         ybar,
@@ -767,13 +827,14 @@ There appears to be a large drop-off especially going from chunks that have no m
         xticklabels from table={\datatable}{bin},
         xticklabel style={rotate=30, anchor=east, align=center, text width=3cm},
     ]
+    \draw[gray, line width=0.2] ({rel axis cs:0,0}|-{axis cs:0,0}) -- ({rel axis cs:1,0}|-{axis cs:0,0});
     \addplot+[
     	red!60,
         ybar,
         error bars/.cd,
         y dir=both,
         y explicit,
-    ] table[x expr=\coordindex, y=pulse_snr_mean, y error plus=pulse_snr_sd] {\datatable};
+    ] table[x expr=\coordindex, y=pulse_snr_mean, y error=pulse_snr_sd] {\datatable};
     \addlegendentry{Pulse};
     \addplot+[
         blue!60,
@@ -781,7 +842,7 @@ There appears to be a large drop-off especially going from chunks that have no m
         error bars/.cd,
         y dir=both,
         y explicit,
-    ] table[x expr=\coordindex, y=resp_snr_mean, y error plus=resp_snr_sd] {\datatable};
+    ] table[x expr=\coordindex, y=resp_snr_mean, y error=resp_snr_sd] {\datatable};
     \addlegendentry{Resp};
     \end{axis}
   \end{tikzpicture}
@@ -807,7 +868,7 @@ This figure reveals that especially when going from chunks with moderate illumin
         height=5cm,
         width=.8\textwidth,
         legend style={
-            at={(0.02,.96)},
+            at={(0.014,.96)},
             anchor=north west,
             legend columns=-1
         },
@@ -818,13 +879,14 @@ This figure reveals that especially when going from chunks with moderate illumin
         xticklabels from table={\datatable}{bin},
         xticklabel style={rotate=22.5, anchor=east},
     ]
+    \draw[gray, line width=0.2] ({rel axis cs:0,0}|-{axis cs:0,0}) -- ({rel axis cs:1,0}|-{axis cs:0,0});
     \addplot+[
     	red!60,
         ybar,
         error bars/.cd,
         y dir=both,
         y explicit,
-    ] table[x expr=\coordindex, y=pulse_snr_mean, y error plus=pulse_snr_sd] {\datatable};
+    ] table[x expr=\coordindex, y=pulse_snr_mean, y error=pulse_snr_sd] {\datatable};
     \addlegendentry{Pulse};
     \addplot+[
         blue!60,
@@ -832,7 +894,7 @@ This figure reveals that especially when going from chunks with moderate illumin
         error bars/.cd,
         y dir=both,
         y explicit,
-    ] table[x expr=\coordindex, y=resp_snr_mean, y error plus=resp_snr_sd] {\datatable};
+    ] table[x expr=\coordindex, y=resp_snr_mean, y error=resp_snr_sd] {\datatable};
     \addlegendentry{Resp};
     \end{axis}
   \end{tikzpicture}
@@ -855,8 +917,8 @@ Figure \ref{fig:impact-age} indeed shows that especially for participants under 
         height=5cm,
         width=.8\textwidth,
         legend style={
-            at={(0.98,.96)},
-            anchor=north east,
+            at={(0.014,.04)},
+            anchor=south west,
             legend columns=-1
         },
         ybar,
@@ -865,13 +927,14 @@ Figure \ref{fig:impact-age} indeed shows that especially for participants under 
         xticklabels from table={\datatable}{bin},
         xticklabel style={align=center, text width=3cm},
     ]
+    \draw[gray, line width=0.2] ({rel axis cs:0,0}|-{axis cs:0,0}) -- ({rel axis cs:1,0}|-{axis cs:0,0});
     \addplot+[
     	red!60,
         ybar,
         error bars/.cd,
         y dir=both,
         y explicit,
-    ] table[x expr=\coordindex, y=pulse_snr_mean, y error plus=pulse_snr_sd] {\datatable};
+    ] table[x expr=\coordindex, y=pulse_snr_mean, y error=pulse_snr_sd] {\datatable};
     \addlegendentry{Pulse};
     \addplot+[
         blue!60,
@@ -879,7 +942,7 @@ Figure \ref{fig:impact-age} indeed shows that especially for participants under 
         error bars/.cd,
         y dir=both,
         y explicit,
-    ] table[x expr=\coordindex, y=resp_snr_mean, y error plus=resp_snr_sd] {\datatable};
+    ] table[x expr=\coordindex, y=resp_snr_mean, y error=resp_snr_sd] {\datatable};
     \addlegendentry{Resp};
     \end{axis}
   \end{tikzpicture}
@@ -902,8 +965,8 @@ Indeed, we observe that consistent with our previous regression analysis, there 
         height=5cm,
         width=.8\textwidth,
         legend style={
-            at={(0.98,.96)},
-            anchor=north east,
+            at={(0.014,.04)},
+            anchor=south west,
             legend columns=-1
         },
         ybar,
@@ -912,13 +975,14 @@ Indeed, we observe that consistent with our previous regression analysis, there 
         xticklabels from table={\datatable}{bin},
         xticklabel style={align=center, text width=3cm},
     ]
+    \draw[gray, line width=0.2] ({rel axis cs:0,0}|-{axis cs:0,0}) -- ({rel axis cs:1,0}|-{axis cs:0,0});
     \addplot+[
     	red!60,
         ybar,
         error bars/.cd,
         y dir=both,
         y explicit,
-    ] table[x expr=\coordindex, y=pulse_snr_mean_vl, y error plus=pulse_snr_sd_vl] {\datatable};
+    ] table[x expr=\coordindex, y=pulse_snr_mean_vl, y error=pulse_snr_sd_vl] {\datatable};
     \addlegendentry{VitalLens};
     \addplot+[
         green!60,
@@ -926,7 +990,7 @@ Indeed, we observe that consistent with our previous regression analysis, there 
         error bars/.cd,
         y dir=both,
         y explicit,
-    ] table[x expr=\coordindex, y=pulse_snr_mean_vl_64, y error plus=pulse_snr_sd_vl_64] {\datatable};
+    ] table[x expr=\coordindex, y=pulse_snr_mean_vl_64, y error=pulse_snr_sd_vl_64] {\datatable};
     \addlegendentry{VitalLens*};
     \end{axis}
   \end{tikzpicture}
@@ -935,7 +999,7 @@ Indeed, we observe that consistent with our previous regression analysis, there 
 \end{figure}
 
 Next, we want to investigate to what degree the inclusion of VV-Africa-Small in our training data lessened this skin type effect.
-For this purpose, we compare VitalLens with \textit{VitalLens*}, a version of VitalLens that is solely trained on the PROSIT test set.
+For this purpose, we compare VitalLens with \textit{VitalLens*}, a version of VitalLens that is solely trained on PROSIT.
 The training set of PROSIT by itself only includes 2 individuals of skin type 6, a number that is massively increased in the combined training data.
 Both VitalLens and VitalLens* are then evaluated on VV-Medium.
 Figure \ref{fig:impact-skin-type-comparison} compares the results, again grouped by skin type.
@@ -949,8 +1013,8 @@ It is evident that the addition of VV-Africa-Small led to a sizeable improvement
         height=5cm,
         width=.8\textwidth,
         legend style={
-            at={(0.98,.96)},
-            anchor=north east,
+            at={(0.014,.04)},
+            anchor=south west,
             legend columns=-1
         },
         ybar,
@@ -959,13 +1023,14 @@ It is evident that the addition of VV-Africa-Small led to a sizeable improvement
         xticklabels from table={\datatable}{bin},
         xticklabel style={align=center, text width=3cm},
     ]
+    \draw[gray, line width=0.2] ({rel axis cs:0,0}|-{axis cs:0,0}) -- ({rel axis cs:1,0}|-{axis cs:0,0});
     \addplot+[
     	red!60,
         ybar,
         error bars/.cd,
         y dir=both,
         y explicit,
-    ] table[x expr=\coordindex, y=pulse_snr_mean_vl, y error plus=pulse_snr_sd_vl] {\datatable};
+    ] table[x expr=\coordindex, y=pulse_snr_mean_vl, y error=pulse_snr_sd_vl] {\datatable};
     \addlegendentry{VitalLens};
     \addplot+[
         green!60,
@@ -973,7 +1038,7 @@ It is evident that the addition of VV-Africa-Small led to a sizeable improvement
         error bars/.cd,
         y dir=both,
         y explicit,
-    ] table[x expr=\coordindex, y=pulse_snr_mean_pos, y error plus=pulse_snr_sd_pos] {\datatable};
+    ] table[x expr=\coordindex, y=pulse_snr_mean_pos, y error=pulse_snr_sd_pos] {\datatable};
     \addlegendentry{POS};
     \end{axis}
   \end{tikzpicture}
@@ -983,6 +1048,7 @@ It is evident that the addition of VV-Africa-Small led to a sizeable improvement
 
 Finally, we compare the impact of skin types on pulse wave estimation between our learned model VitalLens and the best-performing handcrafted model POS.
 As visible in Figure \ref{fig:impact-skin-type-comparison-pos}, the impact of skin types in POS is even worse than on VitalLens*, with an even larger drop-off in SNR between skin types 5 and 6.
+% TODO: Is this correct?
 
 We can conclude from this analysis that issues arising from the lower pulse signal strength in rPPG for darker skin types can at least partially be overcome by learning-based rPPG models which use training data that actually includes a significant amount of individuals with those skin types.
 
@@ -1005,8 +1071,8 @@ Figures \ref{fig:impact-hr} and \ref{fig:impact-rr} show the SNR for pulse and r
         height=5cm,
         width=.8\textwidth,
         legend style={
-            at={(0.02,.96)},
-            anchor=north west,
+            at={(0.014,.04)},
+            anchor=south west,
             legend columns=-1
         },
         ybar,
@@ -1015,13 +1081,14 @@ Figures \ref{fig:impact-hr} and \ref{fig:impact-rr} show the SNR for pulse and r
         xticklabels from table={\datatable}{bin},
         xticklabel style={rotate=22.5, anchor=east},
     ]
+    \draw[gray, line width=0.2] ({rel axis cs:0,0}|-{axis cs:0,0}) -- ({rel axis cs:1,0}|-{axis cs:0,0});
     \addplot+[
     	red!60,
         ybar,
         error bars/.cd,
         y dir=both,
         y explicit,
-    ] table[x expr=\coordindex, y=pulse_snr_mean, y error plus=pulse_snr_sd] {\datatable};
+    ] table[x expr=\coordindex, y=pulse_snr_mean, y error=pulse_snr_sd] {\datatable};
     \addlegendentry{Pulse};
     \addplot+[
         blue!60,
@@ -1029,7 +1096,7 @@ Figures \ref{fig:impact-hr} and \ref{fig:impact-rr} show the SNR for pulse and r
         error bars/.cd,
         y dir=both,
         y explicit,
-    ] table[x expr=\coordindex, y=resp_snr_mean, y error plus=resp_snr_sd] {\datatable};
+    ] table[x expr=\coordindex, y=resp_snr_mean, y error=resp_snr_sd] {\datatable};
     \addlegendentry{Resp};
     \end{axis}
   \end{tikzpicture}
@@ -1049,23 +1116,25 @@ Figures \ref{fig:impact-hr} and \ref{fig:impact-rr} show the SNR for pulse and r
         height=5cm,
         width=.8\textwidth,
         legend style={
-            at={(0.02,.96)},
-            anchor=north west,
+            at={(0.014,.04)},
+            anchor=south west,
             legend columns=-1
         },
         ybar,
         bar width=14.,
+        ymin=-7,
         xtick=data,
         xticklabels from table={\datatable}{bin},
         xticklabel style={rotate=22.5, anchor=east},
     ]
+    \draw[gray, line width=0.2] ({rel axis cs:0,0}|-{axis cs:0,0}) -- ({rel axis cs:1,0}|-{axis cs:0,0});
     \addplot+[
     	red!60,
         ybar,
         error bars/.cd,
         y dir=both,
         y explicit,
-    ] table[x expr=\coordindex, y=pulse_snr_mean, y error plus=pulse_snr_sd] {\datatable};
+    ] table[x expr=\coordindex, y=pulse_snr_mean, y error=pulse_snr_sd] {\datatable};
     \addlegendentry{Pulse};
     \addplot+[
         blue!60,
@@ -1073,7 +1142,7 @@ Figures \ref{fig:impact-hr} and \ref{fig:impact-rr} show the SNR for pulse and r
         error bars/.cd,
         y dir=both,
         y explicit,
-    ] table[x expr=\coordindex, y=resp_snr_mean, y error plus=resp_snr_sd] {\datatable};
+    ] table[x expr=\coordindex, y=resp_snr_mean, y error=resp_snr_sd] {\datatable};
     \addlegendentry{Resp};
     \end{axis}
   \end{tikzpicture}
@@ -1093,6 +1162,11 @@ The extensive evaluation establishes its superiority over established methods, s
 Notably, VitalLens outperforms these methods while maintaining fast inference times.
 The thorough analysis of factors impacting performance reveals the significance of participant movement and illuminance variation, providing valuable insights for optimal usage.
 Additionally, the inclusion of diverse training data to address skin type bias, contributes to the model's robustness.
+
+\begin{ack}
+We are thankful to Pieter-Jan Toye and Andrew Goodwin for the helpful suggestions.
+This work was funded by Rouast Labs Pty Ltd.
+\end{ack}
 
 \bibliographystyle{plain}
 \bibliography{paper}
